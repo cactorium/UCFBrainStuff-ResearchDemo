@@ -1,0 +1,8 @@
+CMakeCache/
+CMakeFiles/
+CMakeCache.txt
+cpm-bin/
+cpm-packages/
+*.swp
+blinky
+cmake_install.cmake
