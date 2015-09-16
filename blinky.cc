@@ -3,8 +3,8 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include <cstdlib>
 #include <cstdio>
+#include <cstdint>
 
 #include <algorithm>
 #include <fstream>
@@ -115,7 +115,7 @@ int main(void) {
         exit(EXIT_FAILURE);
     }
     // Create and compile our GLSL program from the shaders
-    GLuint programID = LoadShaders("vert.vs", "frag.fs");
+    GLuint programID = LoadShaders("vert.vsh", "frag.fsh");
 
     glfwSwapInterval(1);
     glfwSetKeyCallback(window, key_callback);
@@ -152,6 +152,10 @@ int main(void) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(g_index_buffer_data)*sizeof(GLuint), g_index_buffer_data, GL_STATIC_DRAW);
 
+    GLuint vals = 0x0039;
+    GLint uniformLocation = glGetUniformLocation(programID, "vals");
+    std::cerr << "uniform location is " << uniformLocation << std::endl;
+
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         // 1rst attribute buffer : vertices
@@ -166,9 +170,9 @@ int main(void) {
            (void*)0            // array buffer offset
         );
          
-
         // Draw the triangle !
         glUseProgram(programID);
+        glUniform1ui(uniformLocation, vals);
 
         // Bind the index array
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
@@ -178,6 +182,7 @@ int main(void) {
         glDisableVertexAttribArray(0);
         glfwSwapBuffers(window);
         glfwPollEvents();
+        vals = ~vals;
     }
     glfwDestroyWindow(window);
     glfwTerminate();
