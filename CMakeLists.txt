@@ -35,7 +35,8 @@ CPM_AddModule("cpm-glew"
     GIT_REPOSITORY "https://github.com/iauns/cpm-glew")
 CPM_Finish()
 
-add_executable(blinky blinky.cc)
+add_executable(blinky blinky.cc window.cc)
+target_link_libraries(blinky)
 
 target_compile_options(blinky PRIVATE -std=c++11 -Wall)
 target_link_libraries(blinky ${CPM_LIBRARIES}) 

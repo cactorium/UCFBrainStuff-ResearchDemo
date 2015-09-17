@@ -6,3 +6,4 @@ cpm-packages/
 *.swp
 blinky
 cmake_install.cmake
+Makefile
