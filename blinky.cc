@@ -125,7 +125,7 @@ int main(void) {
     // Create and compile our GLSL program from the shaders
     GLuint programID = LoadShaders("vert.vsh", "frag.fsh");
 
-    glfwSwapInterval(2);
+    glfwSwapInterval(1);
     glfwSetKeyCallback(window, key_callback);
     glfwSetWindowSizeCallback(window, window_size_callback);
 
