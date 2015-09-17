@@ -98,6 +98,12 @@ GLuint LoadShaders(const char* vertex_file_path, const char* fragment_file_path)
     return ProgramID;
 }
 
+uint32_t next_msequence63(uint32_t i) {
+    const auto lsb = i & 0x00000001;
+    const auto lsb2 = i & (0x00000001 << 5);
+    return (i >> 1) | ((lsb ^ lsb2) << 5);
+};
+
 int main(void) {
     GLFWwindow* window;
     glfwSetErrorCallback(error_callback);
@@ -119,7 +125,7 @@ int main(void) {
     // Create and compile our GLSL program from the shaders
     GLuint programID = LoadShaders("vert.vsh", "frag.fsh");
 
-    glfwSwapInterval(1);
+    glfwSwapInterval(2);
     glfwSetKeyCallback(window, key_callback);
     glfwSetWindowSizeCallback(window, window_size_callback);
 
@@ -162,9 +168,7 @@ int main(void) {
     for (auto i = 0u; i < seqs.size(); i++) {
         seqs[i] = tmp;
         for (auto j = 0u; j < 64/seqs.size(); j++) {
-            const auto lsb = tmp & 0x00000001;
-            const auto lsb2 = tmp & (0x00000001 << 5);
-            tmp = (tmp >> 1) | ((lsb ^ lsb2) << 5);
+            tmp = next_msequence63(tmp);
         }
     }
 
@@ -199,11 +203,7 @@ int main(void) {
         glDisableVertexAttribArray(0);
         glfwPollEvents();
         std::for_each(seqs.begin(), seqs.end(), [](uint32_t &val) {
-            const auto lsb = val & 0x00000001;
-            const auto lsb2 = val & (0x00000001 << 5);
-            val >>= 1;
-            val |= (lsb ^ (lsb2 >> 5)) << 5;
-
+            val = next_msequence63(val);
         });
         glfwSwapBuffers(window);
     }
