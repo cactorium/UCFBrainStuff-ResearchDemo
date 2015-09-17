@@ -36,5 +36,5 @@ CPM_Finish()
 
 add_executable(blinky blinky.cc)
 
-target_compile_options(blinky PRIVATE -std=c++11)
+target_compile_options(blinky PRIVATE -std=c++11 -Wall)
 target_link_libraries(blinky ${CPM_LIBRARIES}) 

@@ -11,6 +11,7 @@
 #include <iostream>
 #include <vector>
 
+
 static void error_callback(int error, const char* description) {
     fputs(description, stderr);
 }
@@ -102,6 +103,7 @@ int main(void) {
     glfwSetErrorCallback(error_callback);
     if (!glfwInit()) exit(EXIT_FAILURE);
     window = glfwCreateWindow(640, 480, "Simple example", NULL, NULL);
+    // window = glfwCreateWindow(640, 480, "My Title", glfwGetPrimaryMonitor(), NULL);
     if (!window) {
         glfwTerminate();
         exit(EXIT_FAILURE);
@@ -152,12 +154,22 @@ int main(void) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(g_index_buffer_data)*sizeof(GLuint), g_index_buffer_data, GL_STATIC_DRAW);
 
-    GLuint vals = 0x0039;
     GLint uniformLocation = glGetUniformLocation(programID, "vals");
     std::cerr << "uniform location is " << uniformLocation << std::endl;
 
+    auto seqs = std::vector<uint32_t>(16);
+    uint32_t tmp = 1;
+    for (auto i = 0u; i < seqs.size(); i++) {
+        seqs[i] = tmp;
+        for (auto j = 0u; j < 64/seqs.size(); j++) {
+            const auto lsb = tmp & 0x00000001;
+            const auto lsb2 = tmp & (0x00000001 << 5);
+            tmp = (tmp >> 1) | ((lsb ^ lsb2) << 5);
+        }
+    }
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     while (!glfwWindowShouldClose(window)) {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         // 1rst attribute buffer : vertices
         glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
@@ -169,6 +181,11 @@ int main(void) {
            0,                  // stride
            (void*)0            // array buffer offset
         );
+
+        uint32_t vals = 0;
+        for (auto i = 0u; i < seqs.size(); i++) {
+            vals |= (seqs[i] & 1) << i;
+        }
          
         // Draw the triangle !
         glUseProgram(programID);
@@ -180,9 +197,15 @@ int main(void) {
         glDrawElements(GL_TRIANGLES, sizeof(g_index_buffer_data), GL_UNSIGNED_INT, (void*)0);
          
         glDisableVertexAttribArray(0);
-        glfwSwapBuffers(window);
         glfwPollEvents();
-        vals = ~vals;
+        std::for_each(seqs.begin(), seqs.end(), [](uint32_t &val) {
+            const auto lsb = val & 0x00000001;
+            const auto lsb2 = val & (0x00000001 << 5);
+            val >>= 1;
+            val |= (lsb ^ (lsb2 >> 5)) << 5;
+
+        });
+        glfwSwapBuffers(window);
     }
     glfwDestroyWindow(window);
     glfwTerminate();
