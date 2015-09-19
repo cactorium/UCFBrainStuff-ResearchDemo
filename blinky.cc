@@ -34,7 +34,7 @@ void EmotivProcessor::SetMode(DemoMode m) {
     }
     mode = m;
 }
-void EmotivProcessor::ProcessFrame(const Emotiv::Frame &f) {
+void EmotivProcessor::ProcessFrame(const Emotiv::Frame &f, bool isSyncFrame) {
     std::cerr << "Got frame data for frame " << frame_num << std::endl;
 
     frame_num++;
@@ -58,8 +58,7 @@ int main(void) {
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
-    std::atomic<bool> running(true);
-    std::atomic<bool> failed(false);
+    std::atomic<bool> running(true), failed(false), isSyncFrame(false);
     std::thread emokitThread([&]() {
         std::cerr << "emokit thread start" << std::endl;
         Emotiv e(0x1234, 0xed02);
@@ -77,7 +76,12 @@ int main(void) {
             if (p.Mode() != newMode.load()) {
                 p.SetMode(newMode);
             }
-            p.ProcessFrame(newFrame.Unwrap());
+            auto isSync = isSyncFrame.load();
+            if (isSync) {
+                auto tmp = isSync;
+                isSyncFrame.compare_exchange_strong(tmp, false);
+            }
+            p.ProcessFrame(newFrame.Unwrap(), isSync);
 
             newFrame = e.Next();
             stillRunning = running.load();
@@ -99,11 +103,16 @@ int main(void) {
 
     auto emokitFailed = failed.load();
     while (!glfwWindowShouldClose(window) && !emokitFailed) {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        if (seqs[0] == 1) {
+            isSyncFrame.store(true);
+        } else {
+            isSyncFrame.store(false);
+        }
         uint32_t vals = 0;
         for (auto i = 0u; i < seqs.size(); i++) {
             vals |= (seqs[i] & 1) << i;
         }
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         DrawFrame(vals);
         std::for_each(seqs.begin(), seqs.end(), [](uint32_t &val) {
             val = next_msequence63(val);
