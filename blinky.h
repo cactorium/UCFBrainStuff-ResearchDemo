@@ -5,13 +5,21 @@
 
 #include "eeg.h"
 
+enum DemoMode {
+    TRAINING,
+    PROCESSING
+};
+
 class EmotivProcessor {
 public:
-    EmotivProcessor(): frame_num(0) {;}
+    EmotivProcessor(): mode(TRAINING), frame_num(0) {;}
     ~EmotivProcessor() {;}
 
     void ProcessFrame(const Emotiv::Frame &f);
+    void SetMode(DemoMode m);
+    DemoMode Mode() {return mode;}
 protected:
+    DemoMode mode;
     int frame_num;
 };
 

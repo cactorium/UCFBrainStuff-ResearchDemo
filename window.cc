@@ -1,12 +1,22 @@
+#include <atomic>
+
+#include "blinky.h"
 #include "window.h"
 
-GLuint vertexbuffer, indexbuffer;
-GLuint programID;
-GLint uniformLocation;
+static GLuint vertexbuffer, indexbuffer;
+static GLuint programID;
+static GLint uniformLocation;
+
+std::atomic<DemoMode> newMode;
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GL_TRUE);
+
+    if (key == GLFW_KEY_T)
+        newMode.store(TRAINING);
+    if (key == GLFW_KEY_P)
+        newMode.store(PROCESSING);
 }
 
 void window_size_callback(GLFWwindow* window, int width, int height) {

@@ -12,6 +12,8 @@
 #include "eeg.h"
 #include "window.h"
 
+extern std::atomic<DemoMode> newMode;
+
 void error_callback(int error, const char* description);
 
 void error_callback(int error, const char* description) {
@@ -24,6 +26,14 @@ uint32_t next_msequence63(uint32_t i) {
     return (i >> 1) | ((lsb ^ lsb2) << 5);
 };
 
+void EmotivProcessor::SetMode(DemoMode m) {
+    if (m == TRAINING) {
+        std::cerr << "training mode set to training" << std::endl;
+    } else {
+        std::cerr << "training mode set to processing" << std::endl;
+    }
+    mode = m;
+}
 void EmotivProcessor::ProcessFrame(const Emotiv::Frame &f) {
     std::cerr << "Got frame data for frame " << frame_num << std::endl;
 
@@ -48,15 +58,13 @@ int main(void) {
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
-    SetupWindow(window);
-
     std::atomic<bool> running(true);
     std::atomic<bool> failed(false);
     std::thread emokitThread([&]() {
         std::cerr << "emokit thread start" << std::endl;
         Emotiv e(0x1234, 0xed02);
         if (e.Open().Empty()) {
-            failed.store(false);
+            failed.store(true);
             std::cerr << "unable to connect to headset" << std::endl;
             return;
         }
@@ -66,13 +74,19 @@ int main(void) {
         EmotivProcessor p;
         auto newFrame = e.Next();
         while(stillRunning && !newFrame.Empty()) {
+            if (p.Mode() != newMode.load()) {
+                p.SetMode(newMode);
+            }
             p.ProcessFrame(newFrame.Unwrap());
 
             newFrame = e.Next();
             stillRunning = running.load();
         }
+        failed.store(true);
         std::cerr << "emokit thread ended" << std::endl;
     });
+
+    SetupWindow(window);
 
     auto seqs = std::vector<uint32_t>(16);
     uint32_t tmp = 1;
