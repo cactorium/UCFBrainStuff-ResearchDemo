@@ -7,13 +7,13 @@
 
 #include <emokit/emokit.h>
 
-template <class T> class Result {
+template <class T> class Option {
 private:
     bool success;
     T t;
 public:
-    Result(): success(false) {;}
-    Result(T t): success(true), t(t) {;}
+    Option(): success(false) {;}
+    Option(T t): success(true), t(t) {;}
 
     bool Empty() { return !success; }
     T Unwrap() {
@@ -34,8 +34,8 @@ public:
 
     using Frame = struct emokit_frame;
 
-    Result<bool> Open();
-    Result<Frame> Next();
+    Option<bool> Open();
+    Option<Frame> Next();
 };
 
 #endif

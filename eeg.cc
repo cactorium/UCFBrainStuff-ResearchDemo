@@ -19,21 +19,21 @@ Emotiv::~Emotiv() {
     emokit_delete(dev);
 }
 
-Result<bool> Emotiv::Open() {
+Option<bool> Emotiv::Open() {
     if (inited) {
-        return Result<bool>(true);
+        return Option<bool>(true);
     }
     if (emokit_get_count(dev, vid, pid) < 1) {
-        return Result<bool>();
+        return Option<bool>();
     }
     if (emokit_open(dev, vid, pid, 1) < 0) {
-        return Result<bool>();
+        return Option<bool>();
     }
     opened = true;
-    return Result<bool>(true);
+    return Option<bool>(true);
 }
 
-Result<Emotiv::Frame> Emotiv::Next() {
+Option<Emotiv::Frame> Emotiv::Next() {
     auto r = emokit_read_data_timeout(dev, 1000);
     if (r <= 0) {
         if (r < 0) {
@@ -41,7 +41,7 @@ Result<Emotiv::Frame> Emotiv::Next() {
         } else {
             std::cerr << "Headset timeout\n" << std::endl;
         }
-        return Result<Frame>();
+        return Option<Frame>();
     }
-    return Result<Frame>(emokit_get_next_frame(dev));
+    return Option<Frame>(emokit_get_next_frame(dev));
 }
