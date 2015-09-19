@@ -33,10 +33,12 @@ CPM_AddModule("cpm-glfw"
     GIT_REPOSITORY "https://github.com/iauns/cpm-glfw")
 CPM_AddModule("cpm-glew"
     GIT_REPOSITORY "https://github.com/iauns/cpm-glew")
+
+CPM_AddModule("cpm-emokit"
+    GIT_REPOSITORY "https://github.com/cactorium/cpm-emokit")
 CPM_Finish()
 
-add_executable(blinky blinky.cc window.cc)
-target_link_libraries(blinky)
+add_executable(blinky blinky.cc window.cc eeg.cc)
 
 target_compile_options(blinky PRIVATE -std=c++11 -Wall)
 target_link_libraries(blinky ${CPM_LIBRARIES}) 
