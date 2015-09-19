@@ -8,6 +8,7 @@
 #include <thread>
 #include <vector>
 
+#include "blinky.h"
 #include "eeg.h"
 #include "window.h"
 
@@ -23,8 +24,10 @@ uint32_t next_msequence63(uint32_t i) {
     return (i >> 1) | ((lsb ^ lsb2) << 5);
 };
 
-static void process_emokit_frame(const Emotiv::Frame &f) {
-    std::cerr << "Got frame data" << std::endl;
+void EmotivProcessor::ProcessFrame(const Emotiv::Frame &f) {
+    std::cerr << "Got frame data for frame " << frame_num << std::endl;
+
+    frame_num++;
 }
 
 int main(void) {
@@ -50,17 +53,20 @@ int main(void) {
     std::atomic<bool> running(true);
     std::atomic<bool> failed(false);
     std::thread emokitThread([&]() {
+        std::cerr << "emokit thread start" << std::endl;
         Emotiv e(0x1234, 0xed02);
         if (e.Open().Empty()) {
             failed.store(false);
+            std::cerr << "unable to connect to headset" << std::endl;
             return;
         }
         std::cerr << "emokit thread inited" << std::endl;
         auto stillRunning = running.load();
         std::cerr << "emokit thread inited2" << std::endl;
+        EmotivProcessor p;
         auto newFrame = e.Next();
         while(stillRunning && !newFrame.Empty()) {
-            process_emokit_frame(newFrame.Unwrap());
+            p.ProcessFrame(newFrame.Unwrap());
 
             newFrame = e.Next();
             stillRunning = running.load();
