@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef BLINKY_H
-#define BLINKY_H
+#ifndef PROCESSOR_H
+#define PROCESSOR_H
 
 #include "eeg.h"
 

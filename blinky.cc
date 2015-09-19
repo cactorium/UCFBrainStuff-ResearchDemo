@@ -8,8 +8,8 @@
 #include <thread>
 #include <vector>
 
-#include "blinky.h"
 #include "eeg.h"
+#include "processor.h"
 #include "window.h"
 
 extern std::atomic<DemoMode> newMode;
@@ -25,20 +25,6 @@ uint32_t next_msequence63(uint32_t i) {
     const auto lsb2 = (i & (0x00000001 << 5)) >> 5;
     return (i >> 1) | ((lsb ^ lsb2) << 5);
 };
-
-void EmotivProcessor::SetMode(DemoMode m) {
-    if (m == TRAINING) {
-        std::cerr << "training mode set to training" << std::endl;
-    } else {
-        std::cerr << "training mode set to processing" << std::endl;
-    }
-    mode = m;
-}
-void EmotivProcessor::ProcessFrame(const Emotiv::Frame &f, bool isSyncFrame) {
-    std::cerr << "Got frame data for frame " << frame_num << std::endl;
-
-    frame_num++;
-}
 
 int main(void) {
     GLFWwindow* window;

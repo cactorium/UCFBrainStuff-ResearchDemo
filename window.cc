@@ -1,6 +1,6 @@
 #include <atomic>
 
-#include "blinky.h"
+#include "processor.h"
 #include "window.h"
 
 static GLuint vertexbuffer, indexbuffer;
