@@ -1,20 +1,21 @@
-#include "eeg.h"
-
 #include <iostream>
+
+#include "eeg.h"
 
 Emotiv::Emotiv(): Emotiv(EMOKIT_VID, EMOKIT_PID) {
 }
 
 Emotiv::Emotiv(uint32_t device_vid, uint32_t device_pid):
-        dev(nullptr), vid(device_vid), pid(device_pid), inited(false) {
+        dev(nullptr), vid(device_vid), pid(device_pid), inited(false), opened(false) {
     dev = emokit_create();
+    inited = true;
 }
 
 Emotiv::~Emotiv() {
-    if (dev == nullptr || !inited) {
+    if (dev == nullptr)
         return;
-    }
-    emokit_close(dev);
+    if (opened)
+        emokit_close(dev);
     emokit_delete(dev);
 }
 
@@ -28,7 +29,7 @@ Result<bool> Emotiv::Open() {
     if (emokit_open(dev, vid, pid, 1) < 0) {
         return Result<bool>();
     }
-    inited = true;
+    opened = true;
     return Result<bool>(true);
 }
 

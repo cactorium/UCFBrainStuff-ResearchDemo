@@ -26,7 +26,7 @@ class Emotiv {
 private:
     struct emokit_device* dev;
     uint32_t vid, pid;
-    bool inited;
+    bool inited, opened;
 public:
     Emotiv();
     Emotiv(uint32_t device_vid, uint32_t device_pid);
