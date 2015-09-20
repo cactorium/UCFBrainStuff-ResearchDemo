@@ -28,7 +28,7 @@ public:
     static Option<Emotiv> Create();
     static Option<Emotiv> Create(uint32_t device_vid, uint32_t device_pid);
 
-    Option<Frame> Next();
+    CopyableOption<Frame> Next();
 };
 
 #endif

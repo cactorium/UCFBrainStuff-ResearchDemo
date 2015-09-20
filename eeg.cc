@@ -58,8 +58,8 @@ Option<bool> Emotiv::Open() {
     return Option<bool>(true);
 }
 
-Option<Emotiv::Frame> Emotiv::Next() {
-    if (!opened) return Option<Frame>();
+CopyableOption<Emotiv::Frame> Emotiv::Next() {
+    if (!opened) return CopyableOption<Frame>();
     auto r = emokit_read_data_timeout(dev, 1000);
     if (r <= 0) {
         if (r < 0) {
@@ -67,7 +67,7 @@ Option<Emotiv::Frame> Emotiv::Next() {
         } else {
             std::cerr << "Headset timeout\n" << std::endl;
         }
-        return Option<Frame>();
+        return CopyableOption<Frame>();
     }
-    return Option<Frame>(emokit_get_next_frame(dev));
+    return CopyableOption<Frame>(emokit_get_next_frame(dev));
 }
