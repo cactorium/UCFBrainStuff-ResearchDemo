@@ -5,36 +5,29 @@
 
 #include <cassert>
 
+#include "option.h"
+
 #include <emokit/emokit.h>
-
-template <class T> class Option {
-private:
-    bool success;
-    T t;
-public:
-    Option(): success(false) {;}
-    Option(T t): success(true), t(t) {;}
-
-    bool Empty() { return !success; }
-    T Unwrap() {
-        assert(success);
-        return t;
-    }
-};
 
 class Emotiv {
 private:
     struct emokit_device* dev;
     uint32_t vid, pid;
-    bool inited, opened;
-public:
+    bool opened;
+    
     Emotiv();
     Emotiv(uint32_t device_vid, uint32_t device_pid);
+    Option<bool> Open();
+public:
+    Emotiv(Emotiv &rhs) = delete;
+    Emotiv(Emotiv &&rhs);
     ~Emotiv();
 
     using Frame = struct emokit_frame;
 
-    Option<bool> Open();
+    static Option<Emotiv> Create();
+    static Option<Emotiv> Create(uint32_t device_vid, uint32_t device_pid);
+
     Option<Frame> Next();
 };
 

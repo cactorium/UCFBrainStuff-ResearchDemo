@@ -47,12 +47,13 @@ int main(void) {
     std::atomic<bool> running(true), failed(false), isSyncFrame(false);
     std::thread emokitThread([&]() {
         std::cerr << "emokit thread start" << std::endl;
-        Emotiv e(0x1234, 0xed02);
-        if (e.Open().Empty()) {
+        auto oe = Emotiv::Create(0x1234, 0xed02);
+        if (oe.Empty()) {
             failed.store(true);
             std::cerr << "unable to connect to headset" << std::endl;
             return;
         }
+        auto e = oe.Unwrap();
         std::cerr << "emokit thread inited" << std::endl;
         auto stillRunning = running.load();
         std::cerr << "emokit thread inited2" << std::endl;
