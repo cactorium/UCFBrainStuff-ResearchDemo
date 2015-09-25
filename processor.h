@@ -5,6 +5,11 @@
 
 #include "eeg.h"
 
+#include <Eigen/Dense>
+
+#include <array>
+#include <vector>
+
 enum DemoMode {
     TRAINING,
     PROCESSING

@@ -10,6 +10,7 @@ void EmotivProcessor::SetMode(DemoMode m) {
     }
     mode = m;
 }
+
 void EmotivProcessor::ProcessFrame(const Emotiv::Frame &f, bool isSyncFrame) {
     std::cerr << "Got frame data for frame " << frame_num << std::endl;
 
