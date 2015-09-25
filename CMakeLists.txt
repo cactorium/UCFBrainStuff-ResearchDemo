@@ -35,8 +35,8 @@ CPM_AddModule("cpm-glew"
     GIT_REPOSITORY "https://github.com/iauns/cpm-glew")
 CPM_AddModule("cpm-emokit"
     GIT_REPOSITORY "https://github.com/cactorium/cpm-emokit")
-CPM_AddModule("cpm-eigen"
-    GIT_REPOSITORY "https://github.com/toeb/cpm-eigen")
+# CPM_AddModule("cpm-eigen"
+    # GIT_REPOSITORY "https://github.com/toeb/cpm-eigen")
 CPM_Finish()
 
 add_executable(blinky blinky.cc window.cc eeg.cc processor.cc)

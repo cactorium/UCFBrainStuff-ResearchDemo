@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 
@@ -43,6 +44,23 @@ static short getQualityBySensorId(const SensorPosition &p, const Emotiv::Frame &
         default:
             return 0;
     }
+}
+
+void normalize(Vectorf &v) {
+    auto mag2 = 0.0f;
+    std::for_each(v.begin(), v.end(), [&](float f) {
+        mag2 += f*f;
+    });
+    auto mag = sqrtf(mag2);
+    std::for_each(v.begin(), v.end(), [=](float& f) {
+        f /= mag;
+    });
+}
+
+void fill(Vectorf &v, float val) {
+    std::for_each(v.begin(), v.end(), [=](float& f) {
+        f = val;
+    });
 }
 
 EmotivProcessor::EmotivProcessor(): mode(TRAINING), frame_num(0), training_num(0) {
@@ -108,9 +126,9 @@ void SignalProcessor::ProcessFrame(int frame_num, const Emotiv::Frame &f,
                 first_sync = false;
             } else {
                 if (avg_quality > kQualityThreshold && tmp.size() > 0) {
-                    auto new_data = Eigen::VectorXf(tmp.size());
-                    for (auto i = 0; i < tmp.size(); i++) {
-                        new_data(i) = tmp[i];
+                    auto new_data = Vectorf(tmp.size());
+                    for (auto i = 0u; i < tmp.size(); i++) {
+                        new_data[i] = tmp[i];
                     }
                     training_data.push_back(new_data);
                     data_quality.push_back(avg_quality);
@@ -123,22 +141,22 @@ void SignalProcessor::ProcessFrame(int frame_num, const Emotiv::Frame &f,
         avg_quality = avg_quality*frame_num/(1+frame_num) +
             getQualityBySensorId(pos, f)/(1+frame_num);
     } else {
-        for (auto i = 0; i < last.size() - 1; i++) {
-            last(i) = last(i + 1);
+        for (auto i = 0u; i < last.size() - 1; i++) {
+            last[i] = last[i + 1];
         }
-        last(last.size()-1) = getValueBySensorId(pos, f);
-        for (auto i = 0; i < last_quality.size() - 1; i++) {
-            last_quality(i) = last_quality(i + 1);
+        last[last.size()-1] = getValueBySensorId(pos, f);
+        for (auto i = 0u; i < last_quality.size() - 1; i++) {
+            last_quality[i] = last_quality[i + 1];
         }
-        last_quality(last_quality.size()-1) = getQualityBySensorId(pos, f);
+        last_quality[last_quality.size()-1] = getQualityBySensorId(pos, f);
 
         auto shifted_templ = templ;
-        auto best = -1e-100f;
+        auto best = -1e-30f;
         auto offset = -1;
-        for (auto i = 0; i < shifted_templ.size(); i++) {
-            auto tmp = shifted_templ(0);
-            for (auto j = 0; j < shifted_templ.size() - 1; j++) {
-                shifted_templ(j) = shifted_templ(j + 1);
+        for (auto i = 0u; i < shifted_templ.size(); i++) {
+            auto tmp = shifted_templ[0];
+            for (auto j = 0u; j < shifted_templ.size() - 1; j++) {
+                shifted_templ[j] = shifted_templ[j + 1];
             }
             // TODO
         }
@@ -169,7 +187,7 @@ void SignalProcessor::SetMode(DemoMode m) {
             return;
         }
 
-        int trunc_size = 100000000;
+        unsigned int trunc_size = 100000000u;
         for (auto &s: training_data) {
             if (s.size() < trunc_size) {
                 trunc_size = s.size();
@@ -177,24 +195,25 @@ void SignalProcessor::SetMode(DemoMode m) {
         }
 
         // average and generate template
-        auto templa = Eigen::VectorXf(trunc_size);
-        for (auto i = 0; i < templa.size(); i++) {
+        templ = Vectorf(trunc_size);
+        for (auto i = 0u; i < templ.size(); i++) {
             auto sum = 0.0f;
             for (auto s: training_data) {
-                sum += static_cast<float>(s(i));
+                sum += static_cast<float>(s[i]);
             }
-            templa(i) = sum/training_data.size();
+            templ[i] = sum/training_data.size();
         }
 
         auto qual_sum = std::accumulate(data_quality.begin(), data_quality.end(), 0.0f);
 
-        templ = templa/sqrtf(templa.dot(templa));
-        last = Eigen::VectorXf(trunc_size);
-        last_quality = Eigen::VectorXf(trunc_size);
+        normalize(templ);
+        last = Vectorf(trunc_size);
+        last_quality = Vectorf(trunc_size);
 
-        last.fill(0.0f);
-        last_quality.fill(0.0f);
+        fill(last, 0.0f);
+        fill(last_quality, 0.0f);
         last_corr = -1;
         confidence = qual_sum/data_quality.size();
     }
 }
+

@@ -5,8 +5,6 @@
 
 #include "eeg.h"
 
-#include <Eigen/Dense>
-
 #include <vector>
 
 const int kTrainingSets = 10;
@@ -25,6 +23,11 @@ enum SensorPosition {
 const std::array<SensorPosition, kSensors> kSensorOrder {{
     F3, FC6, P7, T8, F7, F8, T7, P8, AF4, F4, AF3, O2, O1, FC5
 }};
+
+typedef std::vector<float> Vectorf;
+
+void normalize(Vectorf &v);
+void fill(Vectorf &v, float val);
 
 struct SignalResult {
     int offset;
@@ -49,14 +52,14 @@ protected:
     // used for training mode
     bool first_sync;
     float avg_quality;
-    std::vector<Eigen::VectorXf> training_data;
+    std::vector<Vectorf> training_data;
     std::vector<float> data_quality;
     std::vector<float> tmp;
 
     // used for processing mode
-    Eigen::VectorXf templ;
-    Eigen::VectorXf last;
-    Eigen::VectorXf last_quality;
+    Vectorf templ;
+    Vectorf last;
+    Vectorf last_quality;
     int last_corr;
     float confidence;
 };
