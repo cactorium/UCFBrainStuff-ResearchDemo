@@ -4,12 +4,14 @@
 #define PROCESSOR_H
 
 #include "eeg.h"
+#include "vector.h"
 
 #include <vector>
 
 const int kTrainingSets = 10;
 const int kSensors = 14;
 const float kQualityThreshold = 5.0f;
+const float kCorrThreshold = 5.0f;
 
 enum DemoMode {
     TRAINING,
@@ -26,8 +28,10 @@ const std::array<SensorPosition, kSensors> kSensorOrder {{
 
 typedef std::vector<float> Vectorf;
 
+/*
 void normalize(Vectorf &v);
 void fill(Vectorf &v, float val);
+*/
 
 struct SignalResult {
     int offset;
@@ -52,16 +56,22 @@ protected:
     // used for training mode
     bool first_sync;
     float avg_quality;
-    std::vector<Vectorf> training_data;
+    // std::vector<Vectorf> training_data;
+    std::vector<FloatVector> training_data;
     std::vector<float> data_quality;
-    std::vector<float> tmp;
+    // std::vector<float> tmp;
+    FloatVector tmp;
 
     // used for processing mode
-    Vectorf templ;
-    Vectorf last;
-    Vectorf last_quality;
+    // Vectorf templ;
+    FloatVector templ;
+    // Vectorf last;
+    FloatVector last;
+    // Vectorf last_quality;
+    FloatVector last_quality;
     int last_corr;
     float confidence;
+    FloatVector foo;
 };
 
 class EmotivProcessor {
