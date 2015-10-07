@@ -39,7 +39,7 @@ CPM_AddModule("cpm-emokit"
     # GIT_REPOSITORY "https://github.com/toeb/cpm-eigen")
 CPM_Finish()
 
-add_executable(blinky blinky.cc window.cc eeg.cc processor.cc)
+add_executable(blinky blinky.cc window.cc eeg.cc processor.cc custom-processor.cc)
 
 target_compile_options(blinky PRIVATE -std=c++11 -Wall)
 target_link_libraries(blinky ${CPM_LIBRARIES}) 

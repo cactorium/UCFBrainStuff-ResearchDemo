@@ -8,6 +8,7 @@
 #include <thread>
 #include <vector>
 
+#include "custom-processor.h"
 #include "eeg.h"
 #include "processor.h"
 #include "window.h"
@@ -57,7 +58,7 @@ int main(void) {
         std::cerr << "emokit thread inited" << std::endl;
         auto stillRunning = running.load();
         std::cerr << "emokit thread inited2" << std::endl;
-        EmotivProcessor p;
+        CustomProcessor p;
         auto newFrame = e.Next();
         while(stillRunning && !newFrame.Empty()) {
             if (p.Mode() != newMode.load()) {
