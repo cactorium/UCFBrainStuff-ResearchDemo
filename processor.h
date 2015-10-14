@@ -7,10 +7,10 @@
 
 #include <vector>
 
-const int kTrainingSets = 10;
+const int kTrainingSets = 30;
 const int kSensors = 14;
 const float kQualityThreshold = 5.0f;
-const float kCorrThreshold = 5.0f;
+const float kCorrThreshold = 0.8f;
 
 enum DemoMode {
     TRAINING,

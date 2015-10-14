@@ -18,7 +18,7 @@ public:
         });
     }
 
-    size_t Size() {
+    size_t Size() const {
         return data.size();
     }
 

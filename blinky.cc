@@ -61,7 +61,7 @@ int main(void) {
         exit(EXIT_FAILURE);
     }
     std::atomic<bool> running(true), failed(false), isSyncFrame(false);
-    std::atomic<uint32_t> chosen(0x00ff);
+    std::atomic<uint32_t> chosen(0x0000);
     std::thread emokitThread([&]() {
         std::cerr << "emokit thread start" << std::endl;
         auto oe = Emotiv::Create(0x1234, 0xed02);
@@ -92,6 +92,9 @@ int main(void) {
                 auto result = p.GetProcessingResult();
                 std::cerr << "Current best is " << result.offset/4 << 
                     " with confidence " << result.confidence << std::endl;
+                if (result.confidence > 0) {
+                    chosen.store(result.offset/4);
+                }
             }
 
             newFrame = e.Next();

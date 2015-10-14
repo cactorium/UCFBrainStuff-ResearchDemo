@@ -34,7 +34,7 @@ protected:
     FloatVector last;
     FloatVector last_quality;
     int last_corr;
-    float confidence;
+    float confidence, last_confidence;
     FloatVector foo;
 };
 

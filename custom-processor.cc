@@ -56,6 +56,7 @@ SignalResult CustomProcessor::GetProcessingResult() const {
 
     for (auto &p: processors) {
         auto result = p.GetProcessingResult();
+        std::cerr << "Got result " << result.offset << "," << result.confidence << std::endl;
         if (result.confidence > best.confidence) {
             best = result;
         }
@@ -78,7 +79,7 @@ void CustomProcessor::SetMode(DemoMode md) {
 
 SignalProcessor::SignalProcessor(SensorPosition pos): mode(TRAINING),
     pos(pos), first_sync(true), avg_quality(0.0f),
-    last_corr(-1), confidence(0.0f) {;}
+    last_corr(-1), confidence(0.0f), last_confidence(0.0f) {;}
 
 void SignalProcessor::ProcessFrame(int frame_num, const Emotiv::Frame &f,
         bool isSyncFrame) {
@@ -163,8 +164,10 @@ void SignalProcessor::ProcessFrame(int frame_num, const Emotiv::Frame &f,
             }
         }
 
+        // std::cerr << "corr: " << best << std::endl;
         if (best > kCorrThreshold) {
             last_corr = off;
+            last_confidence = best;
         } else {
             // TODO: let the confidence decay, as the old values age
         }
@@ -172,9 +175,15 @@ void SignalProcessor::ProcessFrame(int frame_num, const Emotiv::Frame &f,
 }
 
 SignalResult SignalProcessor::GetProcessingResult() const {
-    return SignalResult {
-        last_corr, confidence
-    };
+    if (templ.Size() > 1) {
+        return SignalResult {
+            last_corr, confidence*last_confidence
+        };
+    } else {
+        return SignalResult {
+            -1, 0
+        };
+    }
 }
 
 bool SignalProcessor::TrainingFinished() const {
@@ -235,6 +244,7 @@ void SignalProcessor::SetMode(DemoMode m) {
         // fill(last, 0.0f);
         // fill(last_quality, 0.0f);
         last_corr = -1;
+        last_confidence = 0.0f;
         confidence = qual_sum/data_quality.size();
     }
 }
