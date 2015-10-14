@@ -24,7 +24,7 @@ void fill(Vectorf &v, float val) {
 }
 */
 
-CustomProcessor::CustomProcessor(): frame_num(0), training_num(0) {
+CustomProcessor::CustomProcessor(): frame_num(0), training_num(0), m(TRAINING) {
     for (auto s : kSensorOrder) {
         auto idx = static_cast<int>(s);
         processors[idx] = SignalProcessor(s);
@@ -45,7 +45,7 @@ void CustomProcessor::ProcessFrame(const Emotiv::Frame &f, bool isSyncFrame) {
     if (std::count_if(processors.begin(), processors.end(),
                 [](const SignalProcessor &p) -> bool {
                     return p.TrainingFinished();
-                }) >= kSensors/3) {
+                }) >= kSensors/3 && m != PROCESSING && m != PROCESSING) {
         this -> SetMode(PROCESSING);
     }
 }
@@ -63,15 +63,16 @@ SignalResult CustomProcessor::GetProcessingResult() const {
     return best;
 }
 
-void CustomProcessor::SetMode(DemoMode m) {
-    if (m == TRAINING) {
+void CustomProcessor::SetMode(DemoMode md) {
+    m = md;
+    if (md == TRAINING) {
         std::cerr << "training mode set to training" << std::endl;
     } else {
         std::cerr << "training mode set to processing" << std::endl;
     }
 
     for (auto s : kSensorOrder) {
-        processors[static_cast<int>(s)].SetMode(m);
+        processors[static_cast<int>(s)].SetMode(md);
     }
 }
 
@@ -192,17 +193,22 @@ void SignalProcessor::SetMode(DemoMode m) {
     } else {
         if (training_data.size() <= 0) {
             std::cerr << "WARNING: no new training data, keeping old values" << std::endl;
+            if (last.Size() <= 0) {
+                last = FloatVector(1, 0.0f);
+                last_quality = FloatVector(1, 0.0f);
+            }
             return;
         }
 
         unsigned int trunc_size = 100000000u;
         for (auto &s: training_data) {
             // if (s.size() < trunc_size) {
-            if (s.Size() < trunc_size) {
+            if (s.Size() < trunc_size && s.Size() != 0) {
                 // trunc_size = s.size();
                 trunc_size = s.Size();
             }
         }
+        trunc_size = trunc_size > 0 ? trunc_size : 1;
 
         // average and generate template
         // templ = Vectorf(trunc_size);
@@ -222,6 +228,7 @@ void SignalProcessor::SetMode(DemoMode m) {
         // last = Vectorf(trunc_size);
         // last_quality = Vectorf(trunc_size);
         templ.Normalize();
+        std::cerr << "setting last to vector size " << trunc_size << std::endl;
         last = FloatVector(trunc_size, 0.0f);
         last_quality = FloatVector(trunc_size, 0.0f);
 

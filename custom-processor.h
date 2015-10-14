@@ -51,6 +51,7 @@ public:
 protected:
     int frame_num, training_num;
     std::array<SignalProcessor, kSensors> processors;
+    DemoMode m;
 };
 
 #endif

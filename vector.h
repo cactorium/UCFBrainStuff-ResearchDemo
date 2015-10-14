@@ -50,10 +50,14 @@ public:
         shift = 0;
     }
     void Shift(size_t amount) {
-        shift = (shift + data.size() + amount) % data.size();
+        if (data.size() > 0) {
+            shift = (shift + data.size() + amount) % data.size();
+        }
     }
     void SetShift(size_t amount) {
-        shift = (data.size() + amount) % data.size();
+        if (data.size() > 0) {
+            shift = (data.size() + amount) % data.size();
+        }
     }
     void Normalize() {
         const T norm = std::sqrt(Dot(*this));

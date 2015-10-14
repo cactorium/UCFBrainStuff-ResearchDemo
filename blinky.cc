@@ -77,7 +77,7 @@ int main(void) {
         CustomProcessor p;
         auto newFrame = e.Next();
         int counter = 0;
-        while(stillRunning && !newFrame.Empty()) {
+        while (stillRunning /* && !newFrame.Empty() */) {
             if (p.Mode() != newMode.load()) {
                 p.SetMode(newMode);
             }
@@ -87,7 +87,12 @@ int main(void) {
                 isSyncFrame.compare_exchange_strong(tmp, false);
             }
             p.ProcessFrame(newFrame.Unwrap(), isSync);
-            if (!(counter % 64)) dumpQualityLevels(newFrame.Unwrap());
+            if (!(counter % 64)) {
+                dumpQualityLevels(newFrame.Unwrap());
+                auto result = p.GetProcessingResult();
+                std::cerr << "Current best is " << result.offset/4 << 
+                    " with confidence " << result.confidence << std::endl;
+            }
 
             newFrame = e.Next();
             stillRunning = running.load();
