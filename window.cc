@@ -6,6 +6,7 @@
 static GLuint vertexbuffer, indexbuffer;
 static GLuint programID;
 static GLint uniformLocation;
+static GLint uniformLocation2;
 
 std::atomic<DemoMode> newMode;
 
@@ -137,11 +138,13 @@ void SetupWindow(GLFWwindow *window) {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(g_index_buffer_data)*sizeof(GLuint), g_index_buffer_data, GL_STATIC_DRAW);
 
     uniformLocation = glGetUniformLocation(programID, "vals");
+    uniformLocation2 = glGetUniformLocation(programID, "chosen");
 
     std::cerr << "uniform location is " << uniformLocation << std::endl;
+    std::cerr << "uniform location 2 is " << uniformLocation2 << std::endl;
 }
 
-void DrawFrame(uint32_t uniformVal) {
+void DrawFrame(uint32_t uniformVal, uint32_t chosen) {
     // 1rst attribute buffer : vertices
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
@@ -157,6 +160,7 @@ void DrawFrame(uint32_t uniformVal) {
     // Draw the triangle !
     glUseProgram(programID);
     glUniform1ui(uniformLocation, uniformVal);
+    glUniform1ui(uniformLocation2, chosen);
 
     // Bind the index array
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexbuffer);

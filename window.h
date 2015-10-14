@@ -22,6 +22,6 @@ void window_size_callback(GLFWwindow* window, int width, int height);
 GLuint LoadShaders(const char* vertex_file_path, const char* fragment_file_path);
 
 void SetupWindow(GLFWwindow *window);
-void DrawFrame(uint32_t uniformVal);
+void DrawFrame(uint32_t uniformVal, uint32_t chosen);
 
 #endif

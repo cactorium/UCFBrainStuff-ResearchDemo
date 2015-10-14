@@ -32,7 +32,7 @@ CustomProcessor::CustomProcessor(): frame_num(0), training_num(0) {
 }
 
 void CustomProcessor::ProcessFrame(const Emotiv::Frame &f, bool isSyncFrame) {
-    std::cerr << "Got frame data for frame " << frame_num << std::endl;
+    // std::cerr << "Got frame data for frame " << frame_num << std::endl;
 
     if (isSyncFrame) {
         frame_num = 0;

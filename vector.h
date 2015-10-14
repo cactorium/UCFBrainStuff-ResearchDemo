@@ -11,7 +11,7 @@
 template <typename T> class ShiftableVector {
 public:
     ShiftableVector() : ShiftableVector<T>(0) {;}
-    ShiftableVector(size_t sz) : ShiftableVector<T>(0, T()) {;}
+    ShiftableVector(size_t sz) : ShiftableVector<T>(sz, T()) {;}
     ShiftableVector(size_t sz, const T& val) : data(sz), shift(0) {
         std::for_each(data.begin(), data.end(), [&](T& a) {
             a = val;
