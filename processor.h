@@ -9,6 +9,7 @@
 
 const int kTrainingSets = 30;
 const int kSensors = 14;
+const int kApproximateTrainingSize = 63*100/60 + 1;
 const float kQualityThreshold = 5.0f;
 const float kCorrThreshold = 0.8f;
 
