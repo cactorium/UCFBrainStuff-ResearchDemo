@@ -13,8 +13,15 @@ import numpy as np
 FLOAT_SIZE = 4
 UINT_SIZE = 4
 
+
+def window_size_callback(window, width, height):
+  print("resize: {} {}".format(width, height))
+  gl.glViewport(0, 0, width, height)
+
+
 if not glfw.Init():
   exit()
+
 
 glfw.WindowHint(glfw.CONTEXT_VERSION_MAJOR, 3)
 glfw.WindowHint(glfw.CONTEXT_VERSION_MINOR, 2)
@@ -26,6 +33,7 @@ if not window:
   glfw.Terminate()
   exit()
 
+glfw.SetWindowSizeCallback(window, window_size_callback)
 glfw.MakeContextCurrent(window)
 
 program = gl.glCreateProgram()
@@ -146,7 +154,6 @@ def draw_frame(val, chosen):
   gl.glBindBuffer(gl.GL_ELEMENT_ARRAY_BUFFER, ibo)
   gl.glDrawElements(gl.GL_TRIANGLES, 6, gl.GL_UNSIGNED_INT, None)
   gl.glDisableVertexAttribArray(0)
-  print("frame!")
 
 
 while not glfw.WindowShouldClose(window):
