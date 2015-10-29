@@ -143,6 +143,12 @@ print("vals location is {}".format(valsId))
 print("chosen location is {}".format(chosenId))
 
 
+def next_msequence63(i):
+    lsb = i & 1
+    lsb2 = (i & (1 << 5)) >> 5
+    return (i >> 1) | ((lsb ^ lsb2) << 5)
+
+
 def draw_frame(val, chosen):
   gl.glEnableVertexAttribArray(0)
   gl.glBindBuffer(gl.GL_ARRAY_BUFFER, vbo)
@@ -156,12 +162,29 @@ def draw_frame(val, chosen):
   gl.glDisableVertexAttribArray(0)
 
 
+lights = []
+for i in range(0, 16):
+  v = 1
+  for j in range(0, 4*i):
+    v = next_msequence63(v)
+  lights.append(v)
+
+
+def pack_lights(ls):
+  val = 0
+  for idx, l in enumerate(ls):
+    val = val | ((l & 1) << idx)
+  return val
+
+
 while not glfw.WindowShouldClose(window):
   # Render here
   gl.glClearColor(0.0, 1.0, 0.0, 0.0)
   gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
-  draw_frame(4, 0)
+  draw_frame(pack_lights(lights), -1)
+  lights = list(map(next_msequence63, lights))
+  print(lights)
   # Swap front and back buffers
   glfw.SwapBuffers(window)
 
