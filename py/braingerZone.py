@@ -76,7 +76,6 @@ class State(object):
       self.sequence_number += 1
 
       #now, find correlation coefficients for all 16 flashers.
-      #NOTE: maybe make sure the array is filled and still filling first?
       for x in range(0, State.NUM_FLASHERS):
         training_data_dot = np.dot(self.training_data, self.training_data)
         processing_data_dot = np.dot(self.processing_data, self.processing_data)
@@ -105,6 +104,22 @@ def wait_for_user_input(state):
     elif ln.find('T') != -1:
       state.set_state(State.TRAINING)
 
+def emotiv_loop(is_sync_frame_obj):
+  state = State()
+  headset = emotiv.Emotiv()
+
+  gevent.spawn(headset.setup)
+  gevent.sleep(0)
+  gevent.spawn(wait_for_user_input, state)
+  try:
+    while True:
+      packet = headset.dequeue()
+      state.process_frame(packet)
+      gevent.sleep(0)
+  except KeyboardInterrupt:
+    headset.close()
+  finally:
+    headset.close()
 
 def main():
   state = State()
