@@ -1,4 +1,6 @@
+#flashy.py
 # needed if you're running the OS-X system python
+
 '''
 try:
     from AppKit import NSApp, NSApplication
@@ -10,6 +12,10 @@ except:
 import glfw
 import OpenGL.GL as gl
 import numpy as np
+
+import gevent
+
+import braingerZone
 
 FLOAT_SIZE = 4
 UINT_SIZE = 4
@@ -73,7 +79,7 @@ index_buffer_data = np.array([
     dtype=np.uint32)
 
 
-def window_size_callback(window, width, height):
+def window_size_callback(_, width, height):
   print("resize: {} {}".format(width, height))
   gl.glViewport(0, 0, width, height)
 
@@ -175,6 +181,8 @@ chosenId = gl.glGetUniformLocation(program, "chosen")
 print("vals location is {}".format(valsId))
 print("chosen location is {}".format(chosenId))
 
+is_sync_frame = [False]
+gevent.spawn(braingerZone.emotiv_loop, is_sync_frame)
 
 while not glfw.window_should_close(window):
   # Render here
@@ -182,6 +190,7 @@ while not glfw.window_should_close(window):
   gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
   draw_frame(pack_lights(lights), -1)
+  is_sync_frame[0] = (lights[0] == 1)
   lights = list(map(next_msequence63, lights))
   print(lights)
   # Swap front and back buffers
