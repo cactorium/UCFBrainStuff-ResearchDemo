@@ -6,7 +6,8 @@ except:
     pass
 '''
 
-import cyglfw3 as glfw
+# import cyglfw3 as glfw
+import glfw
 import OpenGL.GL as gl
 import numpy as np
 
@@ -110,21 +111,21 @@ def pack_lights(ls):
     val = val | ((l & 1) << idx)
   return val
 
-if not glfw.Init():
+if not glfw.init():
   exit()
 
-glfw.WindowHint(glfw.CONTEXT_VERSION_MAJOR, 3)
-glfw.WindowHint(glfw.CONTEXT_VERSION_MINOR, 2)
-glfw.WindowHint(glfw.OPENGL_FORWARD_COMPAT, gl.GL_TRUE)
-glfw.WindowHint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
+glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 3)
+glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 2)
+glfw.window_hint(glfw.OPENGL_FORWARD_COMPAT, gl.GL_TRUE)
+glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
 
-window = glfw.CreateWindow(640, 480, 'Hello World')
+window = glfw.create_window(640, 480, 'Hello World', None, None)
 if not window:
-  glfw.Terminate()
+  glfw.terminate()
   exit()
 
-glfw.SetWindowSizeCallback(window, window_size_callback)
-glfw.MakeContextCurrent(window)
+glfw.set_window_size_callback(window, window_size_callback)
+glfw.make_context_current(window)
 
 program = gl.glCreateProgram()
 vertex = gl.glCreateShader(gl.GL_VERTEX_SHADER)
@@ -175,7 +176,7 @@ print("vals location is {}".format(valsId))
 print("chosen location is {}".format(chosenId))
 
 
-while not glfw.WindowShouldClose(window):
+while not glfw.window_should_close(window):
   # Render here
   gl.glClearColor(0.0, 1.0, 0.0, 0.0)
   gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
@@ -184,9 +185,9 @@ while not glfw.WindowShouldClose(window):
   lights = list(map(next_msequence63, lights))
   print(lights)
   # Swap front and back buffers
-  glfw.SwapBuffers(window)
+  glfw.swap_buffers(window)
 
   # Poll for and process events
-  glfw.PollEvents()
+  glfw.poll_events()
 
-glfw.Terminate()
+glfw.terminate()
