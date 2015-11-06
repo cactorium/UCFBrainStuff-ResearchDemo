@@ -192,7 +192,7 @@ while not glfw.window_should_close(window):
   draw_frame(pack_lights(lights), -1)
   is_sync_frame[0] = (lights[0] == 1)
   lights = list(map(next_msequence63, lights))
-  print(lights)
+  # print(lights)
   # Swap front and back buffers
   glfw.swap_buffers(window)
 
