@@ -1,5 +1,5 @@
-#braingerZone.py
-#Objective: imitate research paper
+# braingerZone.py
+# Objective: imitate research paper
 from emokit import emotiv
 import gevent
 import gevent.socket as gs
@@ -20,33 +20,33 @@ class State(object):
     self.state = State.TRAINING
     self.training_data = np.zeros((State.SEQUENCE_SIZE))
     self.processing_data = np.zeros((State.SEQUENCE_SIZE))
-    #self.corr_coeff --- probably only needs to only equal the number of flashing squares???
+    # self.corr_coeff --- probably only needs to only equal the number of flashing squares???
     self.corr_coeff = np.zeros((State.NUM_FLASHERS))
-    #sequence_number - in training template, counter to indicate which frame the base flasher is on
+    # sequence_number - in training template, counter to indicate which frame the base flasher is on
     self.sequence_number = 0
-    #sequence_iteration --- used for training template. counter to tell
-    #how many cycles have been recorded for testing.
+    # sequence_iteration --- used for training template. counter to tell
+    # how many cycles have been recorded for testing.
     self.sequence_iteration = 0
     self.started = False
 
   def process_frame(self, packet, is_sync_frame):
 
-    #note: Only using one of these sensors. Either O1 or O2, as they're closest to visual cortex.
-    #sensor_names = ['F3', 'FC6', 'P7', 'T8', 'F7', 'F8', 'T7', 'P8', 'AF4', 'F4',
+    # note: Only using one of these sensors. Either O1 or O2, as they're closest to visual cortex.
+    # sensor_names = ['F3', 'FC6', 'P7', 'T8', 'F7', 'F8', 'T7', 'P8', 'AF4', 'F4',
     #                'AF3', 'O2', 'O1', 'FC5', 'X', 'Y']
 
-    #Condition: status = training. Go through like ten flash cycles (10 seconds) and average
+    # Condition: status = training. Go through like ten flash cycles (10 seconds) and average
     #           cycle voltages (10 points to average for each of the 128 recordings)
     if self.state == State.TRAINING:
-      #TODO TODO TODO --- make Training begin at first flash of base flasher
+      # TODO TODO TODO --- make Training begin at first flash of base flasher
       if not is_sync_frame and not self.started:
         return
       cameron = []
       if is_sync_frame:
         if self.started:
-          #DEBUG
+          # DEBUG
           cameron.append(self.sequence_number)
-          #END DEBUG
+          # END DEBUG
           self.sequence_number = 0
           self.sequence_iteration += 1
           if self.sequence_iteration < State.N_STIM_CYCLES:
@@ -123,25 +123,24 @@ def wait_for_user_input(state):
     elif ln.find('T') != -1:
       state.set_state(State.TRAINING)
 
-def emotiv_loop(is_sync_frame_obj):
-  #print "foo"
+
+def emotiv_loop(is_sync_frame_int, is_alive_int):
   state = State()
   headset = emotiv.Emotiv()
 
-  #print "foo"
   gevent.spawn(headset.setup)
   gevent.sleep(0)
   gevent.spawn(wait_for_user_input, state)
-  #print "foo"
   try:
-    while True:
-      print is_sync_frame_obj[0]
+    while is_alive_int == 1:
+      print is_sync_frame_int
       packet = headset.dequeue()
-      state.process_frame(packet, is_sync_frame_obj[0])
+      state.process_frame(packet, is_sync_frame_int == 1)
   except KeyboardInterrupt:
     headset.close()
   finally:
     headset.close()
+
 
 def main():
   state = State()

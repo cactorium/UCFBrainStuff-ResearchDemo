@@ -1,4 +1,5 @@
-#flashy.py
+# flashy.py
+
 # needed if you're running the OS-X system python
 
 '''
@@ -8,12 +9,12 @@ except:
     pass
 '''
 
+import multiprocessing
+
 # import cyglfw3 as glfw
 import glfw
 import OpenGL.GL as gl
 import numpy as np
-
-import gevent
 
 import braingerZone
 
@@ -181,8 +182,13 @@ chosenId = gl.glGetUniformLocation(program, "chosen")
 print("vals location is {}".format(valsId))
 print("chosen location is {}".format(chosenId))
 
-is_sync_frame = [False]
-gevent.spawn(braingerZone.emotiv_loop, is_sync_frame)
+is_sync_frame = multiprocessing.Value('i', 0)
+alive = multiprocessing.Value('i', 1)
+emotiv_process = multiprocessing.Process(
+    target=braingerZone.emotiv_loop,
+    args=(is_sync_frame, alive))
+
+emotiv_process.start()
 
 while not glfw.window_should_close(window):
   # Render here
@@ -190,7 +196,10 @@ while not glfw.window_should_close(window):
   gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
   draw_frame(pack_lights(lights), -1)
-  is_sync_frame[0] = (lights[0] == 1)
+  if lights[0] == 1:
+    is_sync_frame = 1
+  else:
+    is_sync_frame = 0
   lights = list(map(next_msequence63, lights))
   # print(lights)
   # Swap front and back buffers
@@ -200,3 +209,7 @@ while not glfw.window_should_close(window):
   glfw.poll_events()
 
 glfw.terminate()
+
+alive = 0
+
+emotiv_process.join()
