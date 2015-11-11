@@ -13,7 +13,7 @@ class State(object):
   TRAINING = 0
   PROCESSING = 1
   N_STIM_CYCLES = 10
-  SEQUENCE_SIZE = int(63*128/60)+200 # 134
+  SEQUENCE_SIZE = 134 + 42
   NUM_FLASHERS = 16
 
   def __init__(self):
@@ -49,6 +49,7 @@ class State(object):
           # END DEBUG
           self.sequence_number = 0
           self.sequence_iteration += 1
+          print "INCREMENTING X %d" % self.sequence_iteration
           if self.sequence_iteration < State.N_STIM_CYCLES:
             self.training_data[self.sequence_number] += packet.sensors['O1']['value']
             self.sequence_number += 1
@@ -128,14 +129,18 @@ def emotiv_loop(is_sync_frame_int, is_alive_int):
   state = State()
   headset = emotiv.Emotiv()
 
+  state = State()
   gevent.spawn(headset.setup)
   gevent.sleep(0)
   gevent.spawn(wait_for_user_input, state)
   try:
-    while is_alive_int == 1:
-      print is_sync_frame_int
+    while is_alive_int.value == 1:
       packet = headset.dequeue()
-      state.process_frame(packet, is_sync_frame_int == 1)
+      if (is_sync_frame_int.value == 1): 
+        state.process_frame(packet, True)
+        is_sync_frame_int.value = 0
+      else:
+        state.process_frame(packet, False)
   except KeyboardInterrupt:
     headset.close()
   finally:
@@ -148,7 +153,7 @@ def main():
 
   gevent.spawn(headset.setup)
   gevent.sleep(0)
-  gevent.spawn(wait_for_user_input, state)
+  # gevent.spawn(wait_for_user_input, state)
   try:
     while True:
       packet = headset.dequeue()

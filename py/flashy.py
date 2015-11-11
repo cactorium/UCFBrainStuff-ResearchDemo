@@ -197,9 +197,9 @@ while not glfw.window_should_close(window):
 
   draw_frame(pack_lights(lights), -1)
   if lights[0] == 1:
-    is_sync_frame = 1
+    is_sync_frame.value = 1
   else:
-    is_sync_frame = 0
+    is_sync_frame.value = 0
   lights = list(map(next_msequence63, lights))
   # print(lights)
   # Swap front and back buffers
@@ -210,6 +210,6 @@ while not glfw.window_should_close(window):
 
 glfw.terminate()
 
-alive = 0
+alive.value = 0
 
 emotiv_process.join()
