@@ -38,7 +38,7 @@ class State(object):
     # Condition: status = training. Go through like ten flash cycles (10 seconds) and average
     #           cycle voltages (10 points to average for each of the 128 recordings)
     if self.state == State.TRAINING:
-      # TODO TODO TODO --- make Training begin at first flash of base flasher
+      # --- make Training begin at first flash of base flasher
       if not is_sync_frame and not self.started:
         return
       cameron = []
@@ -59,6 +59,8 @@ class State(object):
             #Finish the averaging by dividing by 10
             print self.training_data
             self.training_data /= State.N_STIM_CYCLES
+            # NOTE: This is a debug thing. I wanna see if I can heighten the correlation
+            self.training_data -= 180
             #slice the end of the array to length 134...
             self.training_data = self.training_data[:134:1]
             #Switch to processing mode!
@@ -72,28 +74,28 @@ class State(object):
           self.sequence_number += 1
       else:
         #add latest voltage value to proper index of training_data array
-        #TODO: make sure packet.sensors['01']['value'] is getting the one voltage I need
+        # make sure packet.sensors['01']['value'] is getting the one voltage I need
         self.training_data[self.sequence_number] += packet.sensors['O2']['value']
         self.sequence_number += 1
         print self.sequence_number
       #case: reached the end of a 1-second cycle. If that wasn't the 10th cycle,
       #      start another cycle.
-      #TODO: make sure we're starting at the
+      # make sure we're starting at the
       #same time as the beginning of a flash sequence for the test. If the timing is off,
       #wait for the next flash 0 of the base flasher.
-      #TODO TODO TODO --- make Training begin at first flash of base flasher
+      # --- make Training begin at first flash of base flasher
       #if you get here, you've recorded 10 cycles. Time to end training.
-          #condition: status = processing. TODO: Every time the base flasher cycles to zero, make
+          #condition: status = processing. : Every time the base flasher cycles to zero, make
     #           sure that the refreshing processing template is indexed at 0 then.
     elif self.state == State.PROCESSING:
-      #TODO TODO TODO --- make Processing begin indexed at 0 at first flash of base flasher
+      # make Processing begin indexed at 0 at first flash of base flasher
       #In this same statement, check for flash 0 of base flasher
       if is_sync_frame:
         self.sequence_number = 0
       if self.sequence_number >= State.SEQUENCE_SIZE:
         self.sequence_number = 0
-
-      self.processing_data[self.sequence_number] = packet.sensors['O2']['value']
+      # NOTE: debug thing. Trying to heighten the extremes of the correlation.
+      self.processing_data[self.sequence_number] = packet.sensors['O2']['value'] - 180
       self.sequence_number += 1
 
       #now, find correlation coefficients for all 16 flashers.
@@ -105,10 +107,11 @@ class State(object):
         self.corr_coeff[x] = training_processing_dot / math.sqrt(
             training_data_dot * processing_data_dot)
         #rotate array by 128/15 for the 4-frame lag, 16 times, recalculate each time
-        #TODO am I rolling in the right direction?
+        #am I rolling in the right direction?
         self.training_data = np.roll(self.training_data, -int(128/15*x))
       #Roll back to base frame
-      print "max frame %d" % np.argmax(self.corr_coeff)
+      print "max frame %d with corr coeff = %d" % (np.argmax(self.corr_coeff), max(self.corr_coeff))
+      print self.corr_coeff
       chosen_val.value = np.argmax(self.corr_coeff)
 
   def set_state(self, state):
