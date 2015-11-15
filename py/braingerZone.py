@@ -99,7 +99,7 @@ class State(object):
       #now, find correlation coefficients for all 16 flashers.
       for x in range(0, State.NUM_FLASHERS):
         training_data_dot = np.dot(self.training_data, self.training_data)
-        self.training_data = np.roll(self.training_data, int(128/15*x))
+        self.training_data = np.roll(self.training_data, int(134/16*x))
         processing_data_dot = np.dot(self.processing_data, self.processing_data)
         training_processing_dot = np.dot(self.training_data, self.processing_data)
         self.corr_coeff[x] = training_processing_dot / math.sqrt(
