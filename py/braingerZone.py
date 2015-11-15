@@ -13,12 +13,12 @@ class State(object):
   TRAINING = 0
   PROCESSING = 1
   N_STIM_CYCLES = 10
-  SEQUENCE_SIZE = 134 + 42
+  SEQUENCE_SIZE = 134
   NUM_FLASHERS = 16
 
   def __init__(self):
     self.state = State.TRAINING
-    self.training_data = np.zeros((State.SEQUENCE_SIZE))
+    self.training_data = np.zeros((State.SEQUENCE_SIZE + 134))
     self.processing_data = np.zeros((State.SEQUENCE_SIZE))
     # self.corr_coeff --- probably only needs to only equal the number of flashing squares???
     self.corr_coeff = np.zeros((State.NUM_FLASHERS))
@@ -29,7 +29,7 @@ class State(object):
     self.sequence_iteration = 0
     self.started = False
 
-  def process_frame(self, packet, is_sync_frame):
+  def process_frame(self, packet, is_sync_frame, chosen_val):
 
     # note: Only using one of these sensors. Either O1 or O2, as they're closest to visual cortex.
     # sensor_names = ['F3', 'FC6', 'P7', 'T8', 'F7', 'F8', 'T7', 'P8', 'AF4', 'F4',
@@ -51,7 +51,7 @@ class State(object):
           self.sequence_iteration += 1
           print "INCREMENTING X %d" % self.sequence_iteration
           if self.sequence_iteration < State.N_STIM_CYCLES:
-            self.training_data[self.sequence_number] += packet.sensors['O1']['value']
+            self.training_data[self.sequence_number] += packet.sensors['O2']['value']
             self.sequence_number += 1
           else:
             self.sequence_number = 0
@@ -59,6 +59,8 @@ class State(object):
             #Finish the averaging by dividing by 10
             print self.training_data
             self.training_data /= State.N_STIM_CYCLES
+            #slice the end of the array to length 134...
+            self.training_data = self.training_data[:134:1]
             #Switch to processing mode!
             self.state = State.PROCESSING
             print self.training_data
@@ -66,12 +68,12 @@ class State(object):
         else:
           self.started = True
           self.sequence_number = 0
-          self.training_data[self.sequence_number] += packet.sensors['O1']['value']
+          self.training_data[self.sequence_number] += packet.sensors['O2']['value']
           self.sequence_number += 1
       else:
         #add latest voltage value to proper index of training_data array
         #TODO: make sure packet.sensors['01']['value'] is getting the one voltage I need
-        self.training_data[self.sequence_number] += packet.sensors['O1']['value']
+        self.training_data[self.sequence_number] += packet.sensors['O2']['value']
         self.sequence_number += 1
         print self.sequence_number
       #case: reached the end of a 1-second cycle. If that wasn't the 10th cycle,
@@ -91,22 +93,23 @@ class State(object):
       if self.sequence_number >= State.SEQUENCE_SIZE:
         self.sequence_number = 0
 
-      self.processing_data[self.sequence_number] = packet.sensors['O1']['value']
+      self.processing_data[self.sequence_number] = packet.sensors['O2']['value']
       self.sequence_number += 1
 
       #now, find correlation coefficients for all 16 flashers.
       for x in range(0, State.NUM_FLASHERS):
         training_data_dot = np.dot(self.training_data, self.training_data)
-        np.roll(self.training_data, -int(128/15*x))
+        self.training_data = np.roll(self.training_data, int(128/15*x))
         processing_data_dot = np.dot(self.processing_data, self.processing_data)
         training_processing_dot = np.dot(self.training_data, self.processing_data)
         self.corr_coeff[x] = training_processing_dot / math.sqrt(
             training_data_dot * processing_data_dot)
         #rotate array by 128/15 for the 4-frame lag, 16 times, recalculate each time
         #TODO am I rolling in the right direction?
-        np.roll(self.training_data, int(128/15*x))
+        self.training_data = np.roll(self.training_data, -int(128/15*x))
       #Roll back to base frame
       print "max frame %d" % np.argmax(self.corr_coeff)
+      chosen_val.value = np.argmax(self.corr_coeff)
 
   def set_state(self, state):
     if state == State.PROCESSING:
@@ -125,7 +128,7 @@ def wait_for_user_input(state):
       state.set_state(State.TRAINING)
 
 
-def emotiv_loop(is_sync_frame_int, is_alive_int):
+def emotiv_loop(is_sync_frame_int, is_alive_int, chosen_val):
   state = State()
   headset = emotiv.Emotiv()
 
@@ -137,10 +140,10 @@ def emotiv_loop(is_sync_frame_int, is_alive_int):
     while is_alive_int.value == 1:
       packet = headset.dequeue()
       if (is_sync_frame_int.value == 1): 
-        state.process_frame(packet, True)
+        state.process_frame(packet, True, chosen_val)
         is_sync_frame_int.value = 0
       else:
-        state.process_frame(packet, False)
+        state.process_frame(packet, False, chosen_val)
   except KeyboardInterrupt:
     headset.close()
   finally:
