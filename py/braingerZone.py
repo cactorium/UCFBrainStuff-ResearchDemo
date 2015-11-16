@@ -20,6 +20,7 @@ class State(object):
     self.state = State.TRAINING
     self.training_data = np.zeros((State.SEQUENCE_SIZE + 134))
     self.processing_data = np.zeros((State.SEQUENCE_SIZE))
+    self.processing_raw = np.zeros((State.SEQUENCE_SIZE))
     # self.corr_coeff --- probably only needs to only equal the number of flashing squares???
     self.corr_coeff = np.zeros((State.NUM_FLASHERS))
     # sequence_number - in training template, counter to indicate which frame the base flasher is on
@@ -28,6 +29,8 @@ class State(object):
     # how many cycles have been recorded for testing.
     self.sequence_iteration = 0
     self.started = False
+    self.training_data_temp = np.zeros(State.SEQUENCE_SIZE)
+    
 
   def process_frame(self, packet, is_sync_frame, chosen_val):
 
@@ -59,10 +62,11 @@ class State(object):
             #Finish the averaging by dividing by 10
             print self.training_data
             self.training_data /= State.N_STIM_CYCLES
-            # NOTE: This is a debug thing. I wanna see if I can heighten the correlation
-            self.training_data -= 180
             #slice the end of the array to length 134...
             self.training_data = self.training_data[:134:1]
+            # NOTE: This is a debug thing. I wanna see if I can heighten the correlation
+            self.training_data -= np.average(self.training_data)
+ 
             #Switch to processing mode!
             self.state = State.PROCESSING
             print self.training_data
@@ -95,22 +99,23 @@ class State(object):
       if self.sequence_number >= State.SEQUENCE_SIZE:
         self.sequence_number = 0
       # NOTE: debug thing. Trying to heighten the extremes of the correlation.
-      self.processing_data[self.sequence_number] = packet.sensors['O2']['value'] - 180
+      self.processing_raw[self.sequence_number] = packet.sensors['O2']['value']
+      # self.processing_data[self.sequence_number] -= np.average(self.processing_raw) 
       self.sequence_number += 1
 
       #now, find correlation coefficients for all 16 flashers.
-      for x in range(0, State.NUM_FLASHERS):
-        training_data_dot = np.dot(self.training_data, self.training_data)
-        self.training_data = np.roll(self.training_data, int(134/16*x))
+      for x in range(0, 4):
+        self.processing_data = self.processing_raw - np.average(self.processing_raw)
+        self.training_data_temp = np.roll(self.training_data, int(134/16*x))
+        training_data_dot = np.dot(self.training_data_temp, self.training_data_temp)
         processing_data_dot = np.dot(self.processing_data, self.processing_data)
-        training_processing_dot = np.dot(self.training_data, self.processing_data)
+        training_processing_dot = np.dot(self.training_data_temp, self.processing_data)
         self.corr_coeff[x] = training_processing_dot / math.sqrt(
             training_data_dot * processing_data_dot)
         #rotate array by 128/15 for the 4-frame lag, 16 times, recalculate each time
         #am I rolling in the right direction?
-        self.training_data = np.roll(self.training_data, -int(128/15*x))
       #Roll back to base frame
-      print "max frame %d with corr coeff = %d" % (np.argmax(self.corr_coeff), max(self.corr_coeff))
+      print "max frame %d with corr coeff = %f" % (np.argmax(self.corr_coeff), max(self.corr_coeff))
       print self.corr_coeff
       chosen_val.value = np.argmax(self.corr_coeff)
 
