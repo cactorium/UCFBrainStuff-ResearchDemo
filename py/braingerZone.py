@@ -4,26 +4,41 @@ from emokit import emotiv
 import gevent
 import gevent.socket as gs
 
+from sklearn.cross_decomposition import CCA
+
 import numpy as np
 import sys
-# import math
+import math
 
 sensor_names = ['F3', 'FC6', 'P7', 'T8', 'F7', 'F8', 'T7', 'P8', 'AF4',
                 'F4', 'AF3', 'O2', 'O1', 'FC5', 'X', 'Y']
+
+
+def resize_and_shift(in_vec, sz):
+  tmp = in_vec
+  if tmp.size < sz:
+    tmp = tmp - tmp.mean()
+    tmp = np.append(tmp, np.zeros(sz - tmp.size))
+  elif tmp.size > sz:
+    tmp = tmp[0:sz]
+    tmp = tmp - tmp.mean()
+  else:
+    tmp = tmp - tmp.mean()
+  return tmp
 
 
 class State(object):
   TRAINING = 0
   PROCESSING = 1
   N_STIM_CYCLES = 10
-  SEQUENCE_SIZE = int(63*128/60)+1  # 135
+  SEQUENCE_SIZE = int(63*128/60)  # 135
   NUM_FLASHERS = 16
 
   def __init__(self):
     self.state = State.TRAINING
     self.t_data = dict()  # dictionary of np_arrays
     self.t_sync_frames = []
-    self.p_data = dict()  # np.zeros((State.SEQUENCE_SIZE))
+    self.p_data = np.zeros(shape=(len(sensor_names), 0))
     self.p_sync_frames = []
     # self.corr_coeff --- probably only needs to only equal the
     # number of flashing squares???
@@ -36,8 +51,54 @@ class State(object):
     # self.sequence_iteration = 0
     self.started = False
     self.seq_num = -1
+    self.cca = None
 
   def process_training_data(self):
+    last_start = [f for f in self.t_sync_frames if
+                  (f + State.SEQUENCE_SIZE) < self.seq_num][-1]
+    last_end = sorted([f for f in self.t_sync_frames if f > last_start])[0]
+    starts = [f for f in self.t_sync_frames if f < last_start]
+    ends = [sorted([f for f in self.t_sync_frames if f > start])[0]
+            for start in starts]
+    frame_pairs = zip(starts, ends)
+    print "Frame pairs: ", frame_pairs
+    # find the most prominent channel
+    best_channel, best_corr = None, None    # luckily None < all numbers
+    for s in sensor_names:
+      cur_set = self.t_data[s]
+      # average across all the other frames
+      avg = np.zeros(State.SEQUENCE_SIZE)
+      for start, end in frame_pairs:
+        tmp = resize_and_shift(cur_set[start:end], avg.size)
+        avg = avg + tmp
+
+      avg = avg * 1.0/len(frame_pairs)
+      channel = resize_and_shift(cur_set[last_start:last_end], avg.size)
+      channel_mag, avg_mag = np.dot(channel, channel), np.dot(avg, avg)
+      cur_corr = np.dot(avg, channel)/math.sqrt(channel_mag, avg_mag)
+      if cur_corr > best_corr:
+        best_channel, best_corr = s, cur_corr
+
+    print "Best channel %s with corr %f" % (best_channel, best_corr)
+    # calculate CCA weights for it
+    self.cca = CCA(n_components=1)
+    x_t = np.zeros((len(sensor_names), State.SEQUENCE_SIZE*len(frame_pairs)))
+    y_t = np.zeros((1, State.SEQUENCE_SIZE*len(frame_pairs)))
+    # copy the data into an array for processing via CCA
+    for idx, s in enumerate(sensor_names):
+      for (f_idx, (s, e)) in enumerate(frame_pairs):
+        s_idx, e_idx = f_idx*State.SEQUENCE_SIZE, (f_idx*1)*State.SEQUENCE_SIZE
+        x_t[idx][s_idx:e_idx] = resize_and_shift(
+            self.t_data[s][s:e], State.SEQUENCE_SIZE)
+        if s == best_channel:
+          y_t[s_idx:e_idx] = x_t[idx][s_idx:e_idx]
+
+    x = x_t.transpose()
+    y = y_t.transpose()
+    self.cca.fit(x, y)
+    print "CCA weights: "
+    print self.cca.x_weights_
+    # train OCSVM on dataset
     raise "I don't know what I'm doing!"
 
   def process_training(self, packet, is_sync_frame):
@@ -88,6 +149,7 @@ class State(object):
       #Roll back to base frame
       print "max frame %d" % np.argmax(self.corr_coeff)
       """
+      pass
 
   def process_frame(self, packet, is_sync_frame):
     self.seq_num = self.seq_num + 1
