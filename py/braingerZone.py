@@ -55,6 +55,8 @@ class State(object):
     self.seq_num = -1
     self.cca = None
 
+    self.cca_template = None
+
   def process_training_data(self):
     last_start = [f for f in self.t_sync_frames if
                   (f + State.SEQUENCE_SIZE) < self.seq_num][-1]
@@ -105,8 +107,23 @@ class State(object):
     self.cca.fit(x, y)
     print "CCA weights: "
     print self.cca.x_weights_
-    # train OCSVM on dataset
+
+    cca_channel = self.cca.transform(x).flatten()
+    # print cca_channel.shape
+    n_tile = len(cca_channel)/State.SEQUENCE_SIZE
+    self.cca_templ = cca_channel.reshape((State.SEQUENCE_SIZE, -1)).mean(axis=1)
+    cca_avg = np.tile(self.cca_templ, n_tile)
+    print cca_avg.shape
+    print cca_avg
+    cca_channel_mag = np.dot(cca_channel, cca_channel)
+    cca_avg_mag = np.dot(cca_avg, cca_avg)
+    print cca_channel_mag, cca_avg_mag
+    cca_self_corr = np.dot(cca_channel, cca_avg)/(math.sqrt(
+        cca_channel_mag*cca_avg_mag))
+    print "cca channel self corr: %f" % cca_self_corr
+    #  train OCSVM on dataset
     raise "I don't know what I'm doing!"
+    return cca_channel
 
   def process_training(self, packet, is_sync_frame):
     if not is_sync_frame and not self.started:
@@ -132,11 +149,6 @@ class State(object):
 
   def process_frame(self, packet, is_sync_frame, chosen_val):
     self.seq_num = self.seq_num + 1
-    # note: Only using one of these sensors. Either O1 or O2, as they're
-    # closest to visual cortex.
-    # Condition: status = training. Go through like ten flash cycles
-    #       (10 seconds) and average cycle voltages (10 points to average for
-    #       each of the 128 recordings)
     if self.state == State.TRAINING:
       self.process_training(packet, is_sync_frame)
     elif self.state == State.PROCESSING:

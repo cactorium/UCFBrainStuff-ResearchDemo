@@ -19,7 +19,7 @@ class TestData(object):
 def main():
   test_state = bz.State()
   # slice off the first set, it's all zeros
-  data = np.load("EEGsample1.npy")[1:]
+  data = np.load("EEGsample1.npy")[0:]
   d_len, n_sensors = data.shape
   chosen = None
   for i in range(0, d_len):
