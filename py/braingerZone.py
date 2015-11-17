@@ -38,7 +38,7 @@ class State(object):
 
   def __init__(self):
     self.state = State.TRAINING
-    self.t_data = dict()  # dictionary of np_arrays
+    self.t_data = {s: np.zeros(0) for s in sensor_names}
     self.t_sync_frames = []
     self.p_data = np.zeros(shape=(len(sensor_names), 0))
     self.p_sync_frames = []
@@ -77,7 +77,10 @@ class State(object):
       avg = avg * 1.0/len(frame_pairs)
       channel = resize_and_shift(cur_set[last_start:last_end], avg.size)
       channel_mag, avg_mag = np.dot(channel, channel), np.dot(avg, avg)
-      cur_corr = np.dot(avg, channel)/math.sqrt(channel_mag, avg_mag)
+      if channel_mag == 0.0 or avg_mag == 0.0:
+        print "Skipping %s because of lack of values" % s
+        continue
+      cur_corr = np.dot(avg, channel)/math.sqrt(channel_mag*avg_mag)
       if cur_corr > best_corr:
         best_channel, best_corr = s, cur_corr
 
@@ -88,10 +91,10 @@ class State(object):
     y_t = np.zeros((1, State.SEQUENCE_SIZE*len(frame_pairs)))
     # copy the data into an array for processing via CCA
     for idx, s in enumerate(sensor_names):
-      for (f_idx, (s, e)) in enumerate(frame_pairs):
+      for (f_idx, (st, ed)) in enumerate(frame_pairs):
         s_idx, e_idx = f_idx*State.SEQUENCE_SIZE, (f_idx*1)*State.SEQUENCE_SIZE
         x_t[idx][s_idx:e_idx] = resize_and_shift(
-            self.t_data[s][s:e], State.SEQUENCE_SIZE)
+            self.t_data[s][st:ed], State.SEQUENCE_SIZE)
         if s == best_channel:
           y_t[s_idx:e_idx] = x_t[idx][s_idx:e_idx]
 
@@ -110,9 +113,9 @@ class State(object):
       if not self.started:
         self.started = True
         self.seq_num = 0
-        self.training_data = dict()
+        self.t_data = {s: np.zeros(0) for s in sensor_names}
 
-      self.t_sync_frames.extend(self.seq_num)
+      self.t_sync_frames.append(self.seq_num)
       if len(self.t_sync_frames) > State.N_STIM_CYCLES:
           self.state = State.PROCESSING
           self.process_training_data()
@@ -122,10 +125,10 @@ class State(object):
             self.t_data[s], np.zeros(State.SEQUENCE_SIZE))
       self.t_data[s][self.seq_num] = packet.sensors[s]['value']
 
-  def read_mind(self, packet, is_sync_frame):
+  def read_mind(self, packet, is_sync_frame, chosen_val):
       pass
 
-  def process_frame(self, packet, is_sync_frame):
+  def process_frame(self, packet, is_sync_frame, chosen_val):
     self.seq_num = self.seq_num + 1
     # note: Only using one of these sensors. Either O1 or O2, as they're
     # closest to visual cortex.
@@ -133,9 +136,9 @@ class State(object):
     #       (10 seconds) and average cycle voltages (10 points to average for
     #       each of the 128 recordings)
     if self.state == State.TRAINING:
-      self.process_training(self, packet, is_sync_frame)
+      self.process_training(packet, is_sync_frame)
     elif self.state == State.PROCESSING:
-      self.read_mind(self, packet, is_sync_frame)
+      self.read_mind(packet, is_sync_frame, chosen_val)
 
   def set_state(self, state):
     if state == State.PROCESSING:
