@@ -83,8 +83,8 @@ class State(object):
         continue
       cur_corr = np.dot(avg, channel)/math.sqrt(channel_mag*avg_mag)
       print "%s: corr %f" % (s, cur_corr)
-      if abs(cur_corr) > best_corr:
-        best_channel, best_corr, best_avg = s, abs(cur_corr), avg
+      if cur_corr > best_corr:
+        best_channel, best_corr, best_avg = s, cur_corr, avg
 
     print "Best channel %s with corr %f" % (best_channel, best_corr)
     # calculate CCA weights for it
