@@ -66,6 +66,7 @@ class State(object):
     print "Frame pairs: ", frame_pairs
     # find the most prominent channel
     best_channel, best_corr = None, None    # luckily None < all numbers
+    best_avg = np.zeros(State.SEQUENCE_SIZE)
     for s in sensor_names:
       cur_set = self.t_data[s]
       # average across all the other frames
@@ -82,7 +83,7 @@ class State(object):
         continue
       cur_corr = np.dot(avg, channel)/math.sqrt(channel_mag*avg_mag)
       if cur_corr > best_corr:
-        best_channel, best_corr = s, cur_corr
+        best_channel, best_corr, best_avg = s, cur_corr, avg
 
     print "Best channel %s with corr %f" % (best_channel, best_corr)
     # calculate CCA weights for it
@@ -92,11 +93,11 @@ class State(object):
     # copy the data into an array for processing via CCA
     for idx, s in enumerate(sensor_names):
       for (f_idx, (st, ed)) in enumerate(frame_pairs):
-        s_idx, e_idx = f_idx*State.SEQUENCE_SIZE, (f_idx*1)*State.SEQUENCE_SIZE
+        s_idx, e_idx = f_idx*State.SEQUENCE_SIZE, (f_idx+1)*State.SEQUENCE_SIZE
         x_t[idx][s_idx:e_idx] = resize_and_shift(
             self.t_data[s][st:ed], State.SEQUENCE_SIZE)
         if s == best_channel:
-          y_t[s_idx:e_idx] = x_t[idx][s_idx:e_idx]
+          y_t[0][s_idx:e_idx] = best_avg
 
     x = x_t.transpose()
     y = y_t.transpose()

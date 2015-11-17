@@ -4,7 +4,7 @@ import time
 
 import braingerZone as bz
 
-SPEED_UP = 4
+SPEED_UP = 8
 
 
 class TestData(object):
