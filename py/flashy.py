@@ -48,10 +48,15 @@ out highp vec3 color;
 void main(){
     uint mask = 0x00000001u;
     uint val = 0u;
-    val = (fragCoord.x < 0.0f) ? val : (val + 1u);
-    val = (abs(fragCoord.x) < 0.5f) ? val : (val + 2u);
-    val = (fragCoord.y < 0.0f) ? val : (val + 4u);
-    val = (abs(fragCoord.y) < 0.5f) ? val : (val + 8u);
+    if (fragCoord.x < -0.5f) val = 0u;
+    else if (fragCoord.x < 0.0f) val = 1u;
+    else if (fragCoord.x < 0.5f) val = 2u;
+    else val = 3u;
+
+    if (fragCoord.y < -0.5f) val = val*4u + 0u;
+    else if (fragCoord.y < 0.0f) val = val*4u + 1u;
+    else if (fragCoord.y < 0.5f) val = val*4u + 2u;
+    else val = val*4u + 3u;
     mask = mask << val;
 
     if ((vals & mask) != 0u) {
@@ -183,24 +188,32 @@ print("vals location is {}".format(valsId))
 print("chosen location is {}".format(chosenId))
 
 is_sync_frame = multiprocessing.Value('i', 0)
+chosen_val = multiprocessing.Value('i', -1)
 alive = multiprocessing.Value('i', 1)
 emotiv_process = multiprocessing.Process(
     target=braingerZone.emotiv_loop,
-    args=(is_sync_frame, alive))
+    args=(is_sync_frame, alive, chosen_val))
 
 emotiv_process.start()
+
+fast_flash = True
+update_lights = True
 
 while not glfw.window_should_close(window):
   # Render here
   gl.glClearColor(0.0, 1.0, 0.0, 0.0)
   gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
-  draw_frame(pack_lights(lights), -1)
+  draw_frame(pack_lights(lights), chosen_val.value)
   if lights[0] == 1:
-    is_sync_frame = 1
+    is_sync_frame.value = 1
   else:
-    is_sync_frame = 0
-  lights = list(map(next_msequence63, lights))
+    is_sync_frame.value = 0
+
+  if not fast_flash:
+    update_lights = not update_lights
+  if update_lights:
+    lights = list(map(next_msequence63, lights))
   # print(lights)
   # Swap front and back buffers
   glfw.swap_buffers(window)
@@ -210,6 +223,6 @@ while not glfw.window_should_close(window):
 
 glfw.terminate()
 
-alive = 0
+alive.value = 0
 
 emotiv_process.join()

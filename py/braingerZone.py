@@ -31,8 +31,10 @@ class State(object):
   TRAINING = 0
   PROCESSING = 1
   N_STIM_CYCLES = 10
-  SEQUENCE_SIZE = int(63*128/60)  # 135
+  SEQUENCE_SIZE = 134
   NUM_FLASHERS = 16
+  RECORDING = True
+  NUM_CHANNELS = 16
 
   def __init__(self):
     self.state = State.TRAINING
@@ -121,34 +123,6 @@ class State(object):
       self.t_data[s][self.seq_num] = packet.sensors[s]['value']
 
   def read_mind(self, packet, is_sync_frame):
-      """
-      #TODO TODO TODO --- make Processing begin indexed at 0 at first flash of
-      # base flasher
-      #In this same statement, check for flash 0 of base flasher
-      if is_sync_frame:
-        self.sequence_number = 0
-      if self.sequence_number >= State.SEQUENCE_SIZE:
-        self.sequence_number = 0
-
-      self.processing_data[self.sequence_number] = packet.sensors['O1']['value']
-      self.sequence_number += 1
-
-      #now, find correlation coefficients for all 16 flashers.
-      for x in range(0, State.NUM_FLASHERS):
-        training_data_dot = np.dot(self.training_data, self.training_data)
-        np.roll(self.training_data, -int(128/15*x))
-        processing_data_dot = np.dot(self.processing_data, self.processing_data)
-        training_processing_dot = np.dot(
-            self.training_data, self.processing_data)
-        self.corr_coeff[x] = training_processing_dot / math.sqrt(
-            training_data_dot * processing_data_dot)
-        #rotate array by 128/15 for the 4-frame lag, 16 times, recalculate each
-        # time
-        #TODO am I rolling in the right direction?
-        np.roll(self.training_data, int(128/15*x))
-      #Roll back to base frame
-      print "max frame %d" % np.argmax(self.corr_coeff)
-      """
       pass
 
   def process_frame(self, packet, is_sync_frame):
@@ -180,18 +154,22 @@ def wait_for_user_input(state):
       state.set_state(State.TRAINING)
 
 
-def emotiv_loop(is_sync_frame_int, is_alive_int):
+def emotiv_loop(is_sync_frame_int, is_alive_int, chosen_val):
   state = State()
   headset = emotiv.Emotiv()
 
+  state = State()
   gevent.spawn(headset.setup)
   gevent.sleep(0)
   gevent.spawn(wait_for_user_input, state)
   try:
-    while is_alive_int == 1:
-      print is_sync_frame_int
+    while is_alive_int.value == 1:
       packet = headset.dequeue()
-      state.process_frame(packet, is_sync_frame_int == 1)
+      if (is_sync_frame_int.value == 1):
+        state.process_frame(packet, True, chosen_val)
+        is_sync_frame_int.value = 0
+      else:
+        state.process_frame(packet, False, chosen_val)
   except KeyboardInterrupt:
     headset.close()
   finally:
@@ -204,7 +182,7 @@ def main():
 
   gevent.spawn(headset.setup)
   gevent.sleep(0)
-  gevent.spawn(wait_for_user_input, state)
+  # gevent.spawn(wait_for_user_input, state)
   try:
     while True:
       packet = headset.dequeue()
