@@ -15,6 +15,8 @@ class State(object):
   N_STIM_CYCLES = 10
   SEQUENCE_SIZE = 134
   NUM_FLASHERS = 16
+  RECORDING = True
+  NUM_CHANNELS = 16
 
   def __init__(self):
     self.state = State.TRAINING
@@ -30,13 +32,14 @@ class State(object):
     self.sequence_iteration = 0
     self.started = False
     self.training_data_temp = np.zeros(State.SEQUENCE_SIZE)
-    
+    self.recording_data = np.zeros(16)
+    self.accum_data = np.zeros(16)
 
   def process_frame(self, packet, is_sync_frame, chosen_val):
 
     # note: Only using one of these sensors. Either O1 or O2, as they're closest to visual cortex.
-    # sensor_names = ['F3', 'FC6', 'P7', 'T8', 'F7', 'F8', 'T7', 'P8', 'AF4', 'F4',
-    #                'AF3', 'O2', 'O1', 'FC5', 'X', 'Y']
+    sensor_names = ['F3', 'FC6', 'P7', 'T8', 'F7', 'F8', 'T7', 'P8', 'AF4', 'F4',
+                   'AF3', 'O2', 'O1', 'FC5', 'X', 'Y']
 
     # Condition: status = training. Go through like ten flash cycles (10 seconds) and average
     #           cycle voltages (10 points to average for each of the 128 recordings)
@@ -54,6 +57,12 @@ class State(object):
           self.sequence_iteration += 1
           print "INCREMENTING X %d" % self.sequence_iteration
           if self.sequence_iteration < State.N_STIM_CYCLES:
+            # RECORDING STATE: make a huge array with EEG data to save to a file.
+            if State.RECORDING:
+              for i in range(State.NUM_CHANNELS):
+                self.recording_data[i] = packet.sensors[sensor_names[i]]['value']
+            self.accum_data = np.vstack((self.accum_data,self.recording_data))
+            np.save("EEGrecording.npy", self.accum_data)
             self.training_data[self.sequence_number] += packet.sensors['O2']['value']
             self.sequence_number += 1
           else:
@@ -66,7 +75,7 @@ class State(object):
             self.training_data = self.training_data[:134:1]
             # NOTE: This is a debug thing. I wanna see if I can heighten the correlation
             self.training_data -= np.average(self.training_data)
- 
+
             #Switch to processing mode!
             self.state = State.PROCESSING
             print self.training_data
@@ -74,11 +83,21 @@ class State(object):
         else:
           self.started = True
           self.sequence_number = 0
+          if State.RECORDING:
+            for i in range(State.NUM_CHANNELS):
+              self.recording_data[i] = packet.sensors[sensor_names[i]]['value']
+          self.accum_data = np.vstack((self.accum_data,self.recording_data))
+          np.save("EEGrecording.npy", self.accum_data)
           self.training_data[self.sequence_number] += packet.sensors['O2']['value']
           self.sequence_number += 1
       else:
         #add latest voltage value to proper index of training_data array
         # make sure packet.sensors['01']['value'] is getting the one voltage I need
+        if State.RECORDING:
+          for i in range(State.NUM_CHANNELS):
+            self.recording_data[i] = packet.sensors[sensor_names[i]]['value']
+        self.accum_data = np.vstack((self.accum_data,self.recording_data))
+        np.save("EEGrecording.npy", self.accum_data)
         self.training_data[self.sequence_number] += packet.sensors['O2']['value']
         self.sequence_number += 1
         print self.sequence_number
@@ -99,14 +118,19 @@ class State(object):
       if self.sequence_number >= State.SEQUENCE_SIZE:
         self.sequence_number = 0
       # NOTE: debug thing. Trying to heighten the extremes of the correlation.
+      if State.RECORDING:
+        for i in range(State.NUM_CHANNELS):
+          self.recording_data[i] = packet.sensors[sensor_names[i]]['value']
+      self.accum_data = np.vstack((self.accum_data,self.recording_data))
+      np.save("EEGrecording.npy", self.accum_data)
       self.processing_raw[self.sequence_number] = packet.sensors['O2']['value']
-      # self.processing_data[self.sequence_number] -= np.average(self.processing_raw) 
+      # self.processing_data[self.sequence_number] -= np.average(self.processing_raw)
       self.sequence_number += 1
 
       #now, find correlation coefficients for all 16 flashers.
       for x in range(0, 4):
         self.processing_data = self.processing_raw - np.average(self.processing_raw)
-        self.training_data_temp = np.roll(self.training_data, int(134/16*x))
+        self.training_data_temp = np.roll(self.training_data, int(134/4*x))
         training_data_dot = np.dot(self.training_data_temp, self.training_data_temp)
         processing_data_dot = np.dot(self.processing_data, self.processing_data)
         training_processing_dot = np.dot(self.training_data_temp, self.processing_data)
@@ -147,7 +171,7 @@ def emotiv_loop(is_sync_frame_int, is_alive_int, chosen_val):
   try:
     while is_alive_int.value == 1:
       packet = headset.dequeue()
-      if (is_sync_frame_int.value == 1): 
+      if (is_sync_frame_int.value == 1):
         state.process_frame(packet, True, chosen_val)
         is_sync_frame_int.value = 0
       else:
