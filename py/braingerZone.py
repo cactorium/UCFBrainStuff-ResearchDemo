@@ -6,84 +6,63 @@ import gevent.socket as gs
 
 import numpy as np
 import sys
-import math
+# import math
+
+sensor_names = ['F3', 'FC6', 'P7', 'T8', 'F7', 'F8', 'T7', 'P8', 'AF4',
+                'F4', 'AF3', 'O2', 'O1', 'FC5', 'X', 'Y']
 
 
 class State(object):
   TRAINING = 0
   PROCESSING = 1
   N_STIM_CYCLES = 10
-  SEQUENCE_SIZE = int(63*128/60)+200 # 134
+  SEQUENCE_SIZE = int(63*128/60)+1  # 135
   NUM_FLASHERS = 16
 
   def __init__(self):
     self.state = State.TRAINING
-    self.training_data = np.zeros((State.SEQUENCE_SIZE))
-    self.processing_data = np.zeros((State.SEQUENCE_SIZE))
-    # self.corr_coeff --- probably only needs to only equal the number of flashing squares???
-    self.corr_coeff = np.zeros((State.NUM_FLASHERS))
-    # sequence_number - in training template, counter to indicate which frame the base flasher is on
-    self.sequence_number = 0
+    self.t_data = dict()  # dictionary of np_arrays
+    self.t_sync_frames = []
+    self.p_data = dict()  # np.zeros((State.SEQUENCE_SIZE))
+    self.p_sync_frames = []
+    # self.corr_coeff --- probably only needs to only equal the
+    # number of flashing squares???
+    # self.corr_coeff = np.zeros((State.NUM_FLASHERS))
+    # sequence_number - in training template, counter to indicate
+    # which frame the base flasher is on
+    # self.sequence_number = 0
     # sequence_iteration --- used for training template. counter to tell
     # how many cycles have been recorded for testing.
-    self.sequence_iteration = 0
+    # self.sequence_iteration = 0
     self.started = False
+    self.seq_num = -1
 
-  def process_frame(self, packet, is_sync_frame):
+  def process_training_data(self):
+    raise "I don't know what I'm doing!"
 
-    # note: Only using one of these sensors. Either O1 or O2, as they're closest to visual cortex.
-    # sensor_names = ['F3', 'FC6', 'P7', 'T8', 'F7', 'F8', 'T7', 'P8', 'AF4', 'F4',
-    #                'AF3', 'O2', 'O1', 'FC5', 'X', 'Y']
+  def process_training(self, packet, is_sync_frame):
+    if not is_sync_frame and not self.started:
+      return
+    if is_sync_frame:
+      if not self.started:
+        self.started = True
+        self.seq_num = 0
+        self.training_data = dict()
 
-    # Condition: status = training. Go through like ten flash cycles (10 seconds) and average
-    #           cycle voltages (10 points to average for each of the 128 recordings)
-    if self.state == State.TRAINING:
-      # TODO TODO TODO --- make Training begin at first flash of base flasher
-      if not is_sync_frame and not self.started:
-        return
-      cameron = []
-      if is_sync_frame:
-        if self.started:
-          # DEBUG
-          cameron.append(self.sequence_number)
-          # END DEBUG
-          self.sequence_number = 0
-          self.sequence_iteration += 1
-          if self.sequence_iteration < State.N_STIM_CYCLES:
-            self.training_data[self.sequence_number] += packet.sensors['O1']['value']
-            self.sequence_number += 1
-          else:
-            self.sequence_number = 0
-            self.sequence_iteration = 0
-            #Finish the averaging by dividing by 10
-            print self.training_data
-            self.training_data /= State.N_STIM_CYCLES
-            #Switch to processing mode!
-            self.state = State.PROCESSING
-            print self.training_data
-            print "cameron = ", cameron
-        else:
-          self.started = True
-          self.sequence_number = 0
-          self.training_data[self.sequence_number] += packet.sensors['O1']['value']
-          self.sequence_number += 1
-      else:
-        #add latest voltage value to proper index of training_data array
-        #TODO: make sure packet.sensors['01']['value'] is getting the one voltage I need
-        self.training_data[self.sequence_number] += packet.sensors['O1']['value']
-        self.sequence_number += 1
-        print self.sequence_number
-      #case: reached the end of a 1-second cycle. If that wasn't the 10th cycle,
-      #      start another cycle.
-      #TODO: make sure we're starting at the
-      #same time as the beginning of a flash sequence for the test. If the timing is off,
-      #wait for the next flash 0 of the base flasher.
-      #TODO TODO TODO --- make Training begin at first flash of base flasher
-      #if you get here, you've recorded 10 cycles. Time to end training.
-          #condition: status = processing. TODO: Every time the base flasher cycles to zero, make
-    #           sure that the refreshing processing template is indexed at 0 then.
-    elif self.state == State.PROCESSING:
-      #TODO TODO TODO --- make Processing begin indexed at 0 at first flash of base flasher
+      self.t_sync_frames.extend(self.seq_num)
+      if len(self.t_sync_frames) > State.N_STIM_CYCLES:
+          self.state = State.PROCESSING
+          self.process_training_data()
+    for s in sensor_names:
+      if self.seq_num >= self.t_data[s].size:
+        self.t_data[s] = np.append(
+            self.t_data[s], np.zeros(State.SEQUENCE_SIZE))
+      self.t_data[s][self.seq_num] = packet.sensors[s]['value']
+
+  def read_mind(self, packet, is_sync_frame):
+      """
+      #TODO TODO TODO --- make Processing begin indexed at 0 at first flash of
+      # base flasher
       #In this same statement, check for flash 0 of base flasher
       if is_sync_frame:
         self.sequence_number = 0
@@ -98,14 +77,29 @@ class State(object):
         training_data_dot = np.dot(self.training_data, self.training_data)
         np.roll(self.training_data, -int(128/15*x))
         processing_data_dot = np.dot(self.processing_data, self.processing_data)
-        training_processing_dot = np.dot(self.training_data, self.processing_data)
+        training_processing_dot = np.dot(
+            self.training_data, self.processing_data)
         self.corr_coeff[x] = training_processing_dot / math.sqrt(
             training_data_dot * processing_data_dot)
-        #rotate array by 128/15 for the 4-frame lag, 16 times, recalculate each time
+        #rotate array by 128/15 for the 4-frame lag, 16 times, recalculate each
+        # time
         #TODO am I rolling in the right direction?
         np.roll(self.training_data, int(128/15*x))
       #Roll back to base frame
       print "max frame %d" % np.argmax(self.corr_coeff)
+      """
+
+  def process_frame(self, packet, is_sync_frame):
+    self.seq_num = self.seq_num + 1
+    # note: Only using one of these sensors. Either O1 or O2, as they're
+    # closest to visual cortex.
+    # Condition: status = training. Go through like ten flash cycles
+    #       (10 seconds) and average cycle voltages (10 points to average for
+    #       each of the 128 recordings)
+    if self.state == State.TRAINING:
+      self.process_training(self, packet, is_sync_frame)
+    elif self.state == State.PROCESSING:
+      self.read_mind(self, packet, is_sync_frame)
 
   def set_state(self, state):
     if state == State.PROCESSING:
