@@ -28,7 +28,7 @@ def emotiv_loop(is_sync_frame_int, is_alive_int, chosen_val):
   finally:
     headset.close()
     fw = open('recording' + str(int(time.time())) + '.pickle', 'wb')
-    cPickle.dump((packets, sync_frames), fw)
+    cPickle.dump(packets, fw)
     fw.close()
 
 

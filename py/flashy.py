@@ -208,10 +208,7 @@ while not glfw.window_should_close(window):
   gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
   draw_frame(pack_lights(lights), chosen_val.value)
-  if lights[0] == 1:
-    is_sync_frame.value = 1
-  else:
-    is_sync_frame.value = 0
+  is_sync_frame.value = 0
 
   if not fast_flash:
     update_lights = not update_lights
