@@ -16,13 +16,14 @@ def emotiv_loop(is_sync_frame_int, is_alive_int, chosen_val):
   sync_frames = []
   seq_num = 0
   try:
-      while is_alive_int.value == 1:
-        packet = headset.dequeue()
-        packets.append(packet)
-        if is_sync_frame_int.value == 1:
-          sync_frames.append(seq_num)
-        print seq_num
-        seq_num = seq_num + 1
+    while True:
+      packet = headset.dequeue()
+      packets.append(packet)
+      if is_sync_frame_int.value == 1:
+        print "sync"
+        sync_frames.append(seq_num)
+      print seq_num
+      seq_num = seq_num + 1
   except KeyboardInterrupt:
     headset.close()
   finally:
