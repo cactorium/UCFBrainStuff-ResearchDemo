@@ -53,10 +53,6 @@ void main(){
     else if (fragCoord.x < 0.5f) val = 2u;
     else val = 3u;
 
-    if (fragCoord.y < -0.5f) val = val*4u + 0u;
-    else if (fragCoord.y < 0.0f) val = val*4u + 1u;
-    else if (fragCoord.y < 0.5f) val = val*4u + 2u;
-    else val = val*4u + 3u;
     mask = mask << val;
 
     if ((vals & mask) != 0u) {
