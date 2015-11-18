@@ -12,7 +12,7 @@ import math
 class State(object):
   TRAINING = 0
   PROCESSING = 1
-  N_STIM_CYCLES = 10
+  N_STIM_CYCLES = 200
   SEQUENCE_SIZE = 134
   NUM_FLASHERS = 16
   RECORDING = True
@@ -20,7 +20,7 @@ class State(object):
 
   def __init__(self):
     self.state = State.TRAINING
-    self.training_data = np.zeros((State.SEQUENCE_SIZE + 134))
+    self.training_data = np.zeros((State.SEQUENCE_SIZE + 10000))
     self.processing_data = np.zeros((State.SEQUENCE_SIZE))
     self.processing_raw = np.zeros((State.SEQUENCE_SIZE))
     # self.corr_coeff --- probably only needs to only equal the number of flashing squares???
@@ -34,6 +34,7 @@ class State(object):
     self.training_data_temp = np.zeros(State.SEQUENCE_SIZE)
     self.recording_data = np.zeros(16)
     self.accum_data = np.zeros(16)
+    self.sync_indeces = []
 
   def process_frame(self, packet, is_sync_frame, chosen_val):
 
@@ -61,8 +62,12 @@ class State(object):
             if State.RECORDING:
               for i in range(State.NUM_CHANNELS):
                 self.recording_data[i] = packet.sensors[sensor_names[i]]['value']
-            self.accum_data = np.vstack((self.accum_data,self.recording_data))
-            np.save("EEGrecording.npy", self.accum_data)
+              self.accum_data = np.vstack((self.accum_data,self.recording_data))
+              #Definitely in sync frame, so save
+              np.append(self.sync_indeces, self.accum_data.shape[0])
+              print self.accum_data.shape
+              np.save("EEGrecording.npy", self.accum_data)
+              np.save("Sync_numbers.npy", self.sync_indeces)
             self.training_data[self.sequence_number] += packet.sensors['O2']['value']
             self.sequence_number += 1
           else:
@@ -86,7 +91,7 @@ class State(object):
           if State.RECORDING:
             for i in range(State.NUM_CHANNELS):
               self.recording_data[i] = packet.sensors[sensor_names[i]]['value']
-          self.accum_data = np.vstack((self.accum_data,self.recording_data))
+            self.accum_data = np.vstack((self.accum_data,self.recording_data))
           np.save("EEGrecording.npy", self.accum_data)
           self.training_data[self.sequence_number] += packet.sensors['O2']['value']
           self.sequence_number += 1
@@ -96,7 +101,7 @@ class State(object):
         if State.RECORDING:
           for i in range(State.NUM_CHANNELS):
             self.recording_data[i] = packet.sensors[sensor_names[i]]['value']
-        self.accum_data = np.vstack((self.accum_data,self.recording_data))
+          self.accum_data = np.vstack((self.accum_data,self.recording_data))
         np.save("EEGrecording.npy", self.accum_data)
         self.training_data[self.sequence_number] += packet.sensors['O2']['value']
         self.sequence_number += 1
@@ -121,8 +126,8 @@ class State(object):
       if State.RECORDING:
         for i in range(State.NUM_CHANNELS):
           self.recording_data[i] = packet.sensors[sensor_names[i]]['value']
-      self.accum_data = np.vstack((self.accum_data,self.recording_data))
-      np.save("EEGrecording.npy", self.accum_data)
+        self.accum_data = np.vstack((self.accum_data,self.recording_data))
+        np.save("EEGrecording.npy", self.accum_data)
       self.processing_raw[self.sequence_number] = packet.sensors['O2']['value']
       # self.processing_data[self.sequence_number] -= np.average(self.processing_raw)
       self.sequence_number += 1
