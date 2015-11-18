@@ -91,6 +91,18 @@ def next_msequence63(i):
     lsb2 = (i & (1 << 5)) >> 5
     return (i >> 1) | ((lsb ^ lsb2) << 5)
 
+frame_count = [5, 6, 8, 9]
+
+
+def next_ssvep(i):
+  idx = (i & 6) >> 1
+  count = i >> 3
+  count = (count + 1) % (2*frame_count[idx])
+  if count <= frame_count[idx]:
+    return count << 3 | idx << 1 | 1
+  else:
+    return count << 3 | idx << 1 | 0
+
 
 def draw_frame(val, chosen):
   gl.glEnableVertexAttribArray(0)
@@ -105,12 +117,16 @@ def draw_frame(val, chosen):
   gl.glDisableVertexAttribArray(0)
 
 
+'''
 lights = []
 for i in range(0, 16):
   v = 1
   for j in range(0, 4*i):
     v = next_msequence63(v)
   lights.append(v)
+'''
+
+lights = [0x00, 0x02, 0x04, 0x06]
 
 
 def pack_lights(ls):
@@ -209,7 +225,8 @@ while not glfw.window_should_close(window):
   if not fast_flash:
     update_lights = not update_lights
   if update_lights:
-    lights = list(map(next_msequence63, lights))
+    # lights = list(map(next_msequence63, lights))
+    lights = list(map(next_ssvep, lights))
   # print(lights)
   # Swap front and back buffers
   glfw.swap_buffers(window)
