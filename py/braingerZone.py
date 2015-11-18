@@ -49,8 +49,6 @@ class State(object):
       fft = spsig.welch(fft_data, 128.0)
       print fft
 
-      pass
-
     self.idx = (self.idx + 1) % State.WINDOW
 
   def set_state(self, state):
