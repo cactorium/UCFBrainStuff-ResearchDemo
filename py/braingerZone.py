@@ -10,6 +10,9 @@ import numpy as np
 import scipy.signal as spsig
 import sys
 
+import time
+import cPickle`
+
 
 class State(object):
   TRAINING = 0
@@ -105,14 +108,19 @@ def main():
   gevent.spawn(headset.setup)
   gevent.sleep(0)
   # gevent.spawn(wait_for_user_input, state)
+  packets = []
   try:
     while True:
       packet = headset.dequeue()
+      packets.append(packet)
       state.process_frame(packet)
   except KeyboardInterrupt:
     headset.close()
   finally:
     headset.close()
+    fw = open('recording' + str(int(time.time())) + '.pickle', 'wb')
+    cPickle.dump(packets, fw)
+    fw.close()
 
 
 if __name__ == "__main__":
