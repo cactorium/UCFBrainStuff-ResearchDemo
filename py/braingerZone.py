@@ -4,6 +4,8 @@ from emokit import emotiv
 import gevent
 import gevent.socket as gs
 
+import matplotlib.pyplot as plt
+
 import numpy as np
 import scipy.signal as spsig
 import sys
@@ -46,8 +48,14 @@ class State(object):
       fft_data_raw = self.raw_buf[self.idx+1:self.idx+State.WINDOW+1]
       # remove DC offset
       fft_data = fft_data_raw - fft_data_raw.mean()
-      fft = spsig.welch(fft_data, 128.0)
-      print fft
+      f, fft = spsig.welch(fft_data, fs=128.0, nperseg=512, nfft=512)
+      if self.idx % 4 == 0:
+        plt.clear()
+        plt.semilogy(f, fft)
+        plt.ylim([0.5e-3, 1])
+        plt.xlabel('frequency [Hz]')
+        plt.ylabel('PSD [V**2/Hz]')
+        plt.show()
 
     self.idx = (self.idx + 1) % State.WINDOW
 
