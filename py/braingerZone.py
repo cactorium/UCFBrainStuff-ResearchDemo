@@ -21,6 +21,7 @@ def emotiv_loop(is_sync_frame_int, is_alive_int, chosen_val):
         packets.append(packet)
         if is_sync_frame_int.value == 1:
           sync_frames.append(seq_num)
+          is_sync_frame_int.value = 0
         print seq_num
         seq_num = seq_num + 1
   except KeyboardInterrupt:
