@@ -82,7 +82,7 @@ def next_msequence63(i):
     lsb2 = (i & (1 << 5)) >> 5
     return (i >> 1) | ((lsb ^ lsb2) << 5)
 
-frame_count = [5, 6, 8, 9]
+frame_count = [4, 5, 6, 8]
 
 
 def next_ssvep(i):
