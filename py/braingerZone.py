@@ -3,6 +3,7 @@
 from emokit import emotiv
 import gevent
 
+import copy
 import time
 import cPickle
 
@@ -17,7 +18,7 @@ def emotiv_loop(is_sync_frame_int, is_alive_int, chosen_val):
   try:
     while True:
       packet = headset.dequeue()
-      packets.append(packet)
+      packets.append(copy.deepcopy(packet))
       print seq_num
       seq_num = seq_num + 1
   except KeyboardInterrupt:
