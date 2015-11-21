@@ -19,7 +19,7 @@ sensor_names = ['F3', 'FC6', 'P7', 'T8', 'F7', 'F8', 'T7', 'P8', 'AF4',
 
 def calculate_eeg_val(packet):
   vld_vals = [packet.sensors[x]['value']
-                 for x in sensor_names if True or packet.sensors[x]['quality'] > 5]
+                 for x in sensor_names if packet.sensors[x]['quality'] > 5]
   ref_avg = 0
   if len(vld_vals) > 0:
       ref_avg = sum(vld_vals)/float(len(vld_vals))
@@ -29,18 +29,18 @@ def calculate_eeg_val(packet):
   avg_val = 0.0
   if len(vld_data) > 0:
     avg_val = sum(vld_data)/float(len(vld_data))
-#    ref_avg = 0
+    ref_avg = 0
 
   # subtract general EEG activity to accentuate visual cortex activity
   return avg_val - ref_avg
 
 def plot_fft(buf):
-  f, fft = spsig.welch(buf, fs=128.0) # , nfft=512)
+  f, fft = spsig.welch(buf, fs=128.0, nfft=512)
   print 'plot!'
   plt.clf()
   plt.plot(f, fft)
-  # plt.xlim([4, 20])
-  # plt.ylim([0, 120])
+  plt.xlim([4, 20])
+  plt.ylim([0, 120])
   # plt.ylim([0.5e-3, 1])
   plt.xlabel('frequency [Hz]')
   plt.ylabel('PSD [V**2/Hz]')
@@ -66,7 +66,7 @@ class State(object):
     if self.state == State.TRAINING:
       self.training_buf = np.append(self.training_buf, [calculate_eeg_val(packet)])
       #print self.idx
-      if self.idx % 512 == 256:
+      if self.idx % 256 == 255:
           print 'base line plot!'
           plot_fft(self.training_buf - self.training_buf.mean())
       self.idx = self.idx + 1

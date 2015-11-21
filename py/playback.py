@@ -1,6 +1,7 @@
 import cPickle
 
 import sys
+import time
 
 import braingerZone
 
@@ -13,6 +14,7 @@ def main():
   state = braingerZone.State()
   for d in data:
     state.process_frame(d, True, None)
+    time.sleep(1/(256*4.0))
 
 if __name__ == "__main__":
   main()
