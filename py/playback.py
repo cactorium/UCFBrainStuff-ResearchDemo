@@ -2,7 +2,7 @@ import cPickle
 
 import sys
 
-# import braingerZone
+import braingerZone
 
 
 def main():
@@ -10,8 +10,9 @@ def main():
     print '%s <file-name>' % sys.argv[0]
     return
   data = cPickle.load(open(sys.argv[1], 'rb'))
+  state = braingerZone.State()
   for d in data:
-    pass
+    state.process_frame(d, True, None)
 
 if __name__ == "__main__":
   main()
