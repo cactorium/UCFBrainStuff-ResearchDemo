@@ -64,9 +64,13 @@ class State(object):
                 self.recording_data[i] = packet.sensors[sensor_names[i]]['value']
               self.accum_data = np.vstack((self.accum_data,self.recording_data))
               #Definitely in sync frame, so save
-              np.append(self.sync_indeces, self.accum_data.shape[0])
-              print self.accum_data.shape
+              self.sync_indeces = np.append(self.sync_indeces, self.accum_data.shape[0])
+              print "fooooooobar"
+              print self.accum_data.shape[0]
               np.save("EEGrecording.npy", self.accum_data)
+              print "fooooooo"
+              print self.sync_indeces
+              print "ffffffoo."
               np.save("Sync_numbers.npy", self.sync_indeces)
             self.training_data[self.sequence_number] += packet.sensors['O2']['value']
             self.sequence_number += 1
