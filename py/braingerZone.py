@@ -40,7 +40,7 @@ def plot_fft(buf):
   plt.clf()
   plt.plot(f, fft)
   # plt.xlim([4, 20])
-  plt.ylim([0, 120])
+  # plt.ylim([0, 120])
   # plt.ylim([0.5e-3, 1])
   plt.xlabel('frequency [Hz]')
   plt.ylabel('PSD [V**2/Hz]')
