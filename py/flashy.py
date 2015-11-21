@@ -16,7 +16,7 @@ import glfw
 import OpenGL.GL as gl
 import numpy as np
 
-import braingerZone
+import recordingProcessor
 
 FLOAT_SIZE = 4
 UINT_SIZE = 4
@@ -194,7 +194,7 @@ is_sync_frame = multiprocessing.Value('i', 0)
 chosen_val = multiprocessing.Value('i', -1)
 alive = multiprocessing.Value('i', 1)
 emotiv_process = multiprocessing.Process(
-    target=braingerZone.emotiv_loop,
+    target=recordingProcessor.emotiv_loop,
     args=(is_sync_frame, alive, chosen_val))
 
 emotiv_process.start()
