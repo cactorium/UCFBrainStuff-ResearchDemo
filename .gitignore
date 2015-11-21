@@ -7,3 +7,5 @@ cpm-packages/
 blinky
 cmake_install.cmake
 Makefile
+*.pyc
+
