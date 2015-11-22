@@ -10,22 +10,19 @@ import numpy as np
 import scipy.signal as spsig
 import sys
 
-import time
-import cPickle
-
-
 sensor_names = ['F3', 'FC6', 'P7', 'T8', 'F7', 'F8', 'T7', 'P8', 'AF4',
                 'F4', 'AF3', 'O2', 'O1', 'FC5', 'X', 'Y']
 
+
 def calculate_eeg_val(packet):
   vld_vals = [packet.sensors[x]['value']
-                 for x in sensor_names if True or packet.sensors[x]['quality'] > 5]
+              for x in sensor_names if True or packet.sensors[x]['quality'] > 5]
   ref_avg = 0
   if len(vld_vals) > 0:
       ref_avg = sum(vld_vals)/float(len(vld_vals))
   # average the two visual cortex electrodes
   vld_data = [packet.sensors[x]['value'] for x in ['O1', 'O2'] if
-                packet.sensors[x]['quality'] > 5]
+              packet.sensors[x]['quality'] > 5]
   avg_val = 0.0
   if len(vld_data) > 0:
     avg_val = sum(vld_data)/float(len(vld_data))
@@ -34,8 +31,9 @@ def calculate_eeg_val(packet):
   # subtract general EEG activity to accentuate visual cortex activity
   return avg_val - ref_avg
 
+
 def plot_fft(buf):
-  f, fft = spsig.welch(buf, fs=128.0) # , nfft=512)
+  f, fft = spsig.welch(buf, fs=128.0)  # , nfft=512)
   print 'plot!'
   plt.clf()
   plt.plot(f, fft)
@@ -46,6 +44,7 @@ def plot_fft(buf):
   plt.ylabel('PSD [V**2/Hz]')
   # plt.specgram(fft_data, NFFT=256, Fs=128, noverlap=128)
   plt.draw()
+
 
 class State(object):
   TRAINING = 0
@@ -64,8 +63,9 @@ class State(object):
 
   def process_frame(self, packet, is_sync_frame, chosen_val):
     if self.state == State.TRAINING:
-      self.training_buf = np.append(self.training_buf, [calculate_eeg_val(packet)])
-      #print self.idx
+      self.training_buf = np.append(self.training_buf,
+                                    [calculate_eeg_val(packet)])
+      # print self.idx
       if self.idx % 512 == 256:
           print 'base line plot!'
           plot_fft(self.training_buf - self.training_buf.mean())
@@ -115,11 +115,12 @@ def emotiv_loop(is_sync_frame_int, is_alive_int, chosen_val):
   gevent.sleep(0)
   gevent.spawn(wait_for_user_input, state)
   try:
-    while is_alive_int.value == 1:
+    while is_alive_int is None or is_alive_int.value == 1:
       packet = headset.dequeue()
-      if (is_sync_frame_int.value == 1):
+      if is_sync_frame_int is None or is_sync_frame_int.value:
         state.process_frame(packet, True, chosen_val)
-        is_sync_frame_int.value = 0
+        if is_sync_frame_int is not None:
+          is_sync_frame_int.value = 0
       else:
         state.process_frame(packet, False, chosen_val)
   except KeyboardInterrupt:
@@ -129,25 +130,7 @@ def emotiv_loop(is_sync_frame_int, is_alive_int, chosen_val):
 
 
 def main():
-  state = State()
-  headset = emotiv.Emotiv()
-
-  gevent.spawn(headset.setup)
-  gevent.sleep(0)
-  # gevent.spawn(wait_for_user_input, state)
-  packets = []
-  try:
-    while True:
-      packet = headset.dequeue()
-      packets.append(packet)
-      state.process_frame(packet)
-  except KeyboardInterrupt:
-    headset.close()
-  finally:
-    headset.close()
-    fw = open('recording' + str(int(time.time())) + '.pickle', 'wb')
-    cPickle.dump(packets, fw)
-    fw.close()
+  emotiv_loop(None, None, None)
 
 
 if __name__ == "__main__":
