@@ -29,7 +29,7 @@ def calculate_eeg_val(packet):
   avg_val = 0.0
   if len(vld_data) > 0:
     avg_val = sum(vld_data)/float(len(vld_data))
-    ref_avg = 0
+    #ref_avg = 0
 
   # subtract general EEG activity to accentuate visual cortex activity
   return avg_val - ref_avg
@@ -50,7 +50,7 @@ def plot_fft(buf):
 class State(object):
   TRAINING = 0
   PROCESSING = 1
-  WINDOW = 384
+  WINDOW = 484
   NUM_CHANNELS = 16
 
   def __init__(self):
