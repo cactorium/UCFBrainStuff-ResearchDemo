@@ -2,10 +2,6 @@ syntax = "proto3";
 
 package seniordesign;
 
-service ResultsReceiver {
-    rpc SendResults (ProcessingResults) returns (ProcessingAck);
-}
-
 enum Direction {
     NEUTRAL     = 0;
     FORWARD     = 1;
