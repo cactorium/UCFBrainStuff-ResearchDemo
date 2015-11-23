@@ -153,4 +153,98 @@ ProcessingAck = _reflection.GeneratedProtocolMessageType('ProcessingAck', (_mess
 _sym_db.RegisterMessage(ProcessingAck)
 
 
+import abc
+from grpc.beta import implementations as beta_implementations
+from grpc.early_adopter import implementations as early_adopter_implementations
+from grpc.framework.alpha import utilities as alpha_utilities
+from grpc.framework.common import cardinality
+from grpc.framework.interfaces.face import utilities as face_utilities
+class EarlyAdopterResultsReceiverServicer(object):
+  """<fill me in later!>"""
+  __metaclass__ = abc.ABCMeta
+  @abc.abstractmethod
+  def SendResults(self, request, context):
+    raise NotImplementedError()
+class EarlyAdopterResultsReceiverServer(object):
+  """<fill me in later!>"""
+  __metaclass__ = abc.ABCMeta
+  @abc.abstractmethod
+  def start(self):
+    raise NotImplementedError()
+  @abc.abstractmethod
+  def stop(self):
+    raise NotImplementedError()
+class EarlyAdopterResultsReceiverStub(object):
+  """<fill me in later!>"""
+  __metaclass__ = abc.ABCMeta
+  @abc.abstractmethod
+  def SendResults(self, request):
+    raise NotImplementedError()
+  SendResults.async = None
+def early_adopter_create_ResultsReceiver_server(servicer, port, private_key=None, certificate_chain=None):
+  import seniordesign_pb2
+  import seniordesign_pb2
+  method_service_descriptions = {
+    "SendResults": alpha_utilities.unary_unary_service_description(
+      servicer.SendResults,
+      seniordesign_pb2.ProcessingResults.FromString,
+      seniordesign_pb2.ProcessingAck.SerializeToString,
+    ),
+  }
+  return early_adopter_implementations.server("seniordesign.ResultsReceiver", method_service_descriptions, port, private_key=private_key, certificate_chain=certificate_chain)
+def early_adopter_create_ResultsReceiver_stub(host, port, metadata_transformer=None, secure=False, root_certificates=None, private_key=None, certificate_chain=None, server_host_override=None):
+  import seniordesign_pb2
+  import seniordesign_pb2
+  method_invocation_descriptions = {
+    "SendResults": alpha_utilities.unary_unary_invocation_description(
+      seniordesign_pb2.ProcessingResults.SerializeToString,
+      seniordesign_pb2.ProcessingAck.FromString,
+    ),
+  }
+  return early_adopter_implementations.stub("seniordesign.ResultsReceiver", method_invocation_descriptions, host, port, metadata_transformer=metadata_transformer, secure=secure, root_certificates=root_certificates, private_key=private_key, certificate_chain=certificate_chain, server_host_override=server_host_override)
+
+class BetaResultsReceiverServicer(object):
+  """<fill me in later!>"""
+  __metaclass__ = abc.ABCMeta
+  @abc.abstractmethod
+  def SendResults(self, request, context):
+    raise NotImplementedError()
+
+class BetaResultsReceiverStub(object):
+  """The interface to which stubs will conform."""
+  __metaclass__ = abc.ABCMeta
+  @abc.abstractmethod
+  def SendResults(self, request, timeout):
+    raise NotImplementedError()
+  SendResults.future = None
+
+def beta_create_ResultsReceiver_server(servicer, pool=None, pool_size=None, default_timeout=None, maximum_timeout=None):
+  import seniordesign_pb2
+  import seniordesign_pb2
+  request_deserializers = {
+    ('seniordesign.ResultsReceiver', 'SendResults'): seniordesign_pb2.ProcessingResults.FromString,
+  }
+  response_serializers = {
+    ('seniordesign.ResultsReceiver', 'SendResults'): seniordesign_pb2.ProcessingAck.SerializeToString,
+  }
+  method_implementations = {
+    ('seniordesign.ResultsReceiver', 'SendResults'): face_utilities.unary_unary_inline(servicer.SendResults),
+  }
+  server_options = beta_implementations.server_options(request_deserializers=request_deserializers, response_serializers=response_serializers, thread_pool=pool, thread_pool_size=pool_size, default_timeout=default_timeout, maximum_timeout=maximum_timeout)
+  return beta_implementations.server(method_implementations, options=server_options)
+
+def beta_create_ResultsReceiver_stub(channel, host=None, metadata_transformer=None, pool=None, pool_size=None):
+  import seniordesign_pb2
+  import seniordesign_pb2
+  request_serializers = {
+    ('seniordesign.ResultsReceiver', 'SendResults'): seniordesign_pb2.ProcessingResults.SerializeToString,
+  }
+  response_deserializers = {
+    ('seniordesign.ResultsReceiver', 'SendResults'): seniordesign_pb2.ProcessingAck.FromString,
+  }
+  cardinalities = {
+    'SendResults': cardinality.Cardinality.UNARY_UNARY,
+  }
+  stub_options = beta_implementations.stub_options(host=host, metadata_transformer=metadata_transformer, request_serializers=request_serializers, response_deserializers=response_deserializers, thread_pool=pool, thread_pool_size=pool_size)
+  return beta_implementations.dynamic_stub(channel, 'seniordesign.ResultsReceiver', cardinalities, options=stub_options)
 # @@protoc_insertion_point(module_scope)
