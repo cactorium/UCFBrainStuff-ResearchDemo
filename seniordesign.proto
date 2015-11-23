@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package seniordesign;
+
+service ResultsReceiver {
+    rpc SendResults (ProcessingResults) returns (ProcessingAck);
+}
+
+enum Direction {
+    NEUTRAL     = 0;
+    FORWARD     = 1;
+    BACKWARD    = 2;
+    LEFT        = 3;
+    RIGHT       = 4;
+}
+
+message ProcessingResults {
+    Direction direction = 1;
+    double confidence = 2;
+}
+
+message ProcessingAck {
+    uint64 timestamp = 1;
+}
