@@ -10,6 +10,12 @@ import numpy as np
 import scipy.signal as spsig
 import sys
 
+NEUTRAL = 0
+FORWARD = 1
+BACKWARD = 2
+LEFT = 3
+RIGHT = 4
+
 sensor_names = ['F3', 'FC6', 'P7', 'T8', 'F7', 'F8', 'T7', 'P8', 'AF4',
                 'F4', 'AF3', 'O2', 'O1', 'FC5', 'X', 'Y']
 
@@ -88,6 +94,7 @@ class State(object):
         plot_fft(fft_data)
 
       self.idx = (self.idx + 1) % State.WINDOW
+    return None
 
   def set_state(self, state):
     if state == State.PROCESSING:
