@@ -25,8 +25,10 @@ def wrap_cmd(tp):
 def main():
   context = zmq.Context()
   socket = context.socket(zmq.PUB)
-  socket.bind('ipc://pc_cmds')
+  socket.bind('tcp://localhost:9000')
 
+  # NOTE: This doesn't correctly work because the process_frame doesn't
+  # currently return values. To be fixed soon!
   def send_msg(val):
     socket.send_string(wrap_cmd(val).SerializeToString())
 
