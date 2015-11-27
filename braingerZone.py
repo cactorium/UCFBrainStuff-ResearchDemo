@@ -106,7 +106,7 @@ def wait_for_user_input(state):
       state.set_state(State.TRAINING)
 
 
-def emotiv_loop(is_sync_frame_int, is_alive_int, chosen_val):
+def emotiv_loop(is_sync_frame_int, is_alive_int, chosen_val, callback=None):
   state = State()
   headset = emotiv.Emotiv()
 
@@ -118,11 +118,13 @@ def emotiv_loop(is_sync_frame_int, is_alive_int, chosen_val):
     while is_alive_int is None or is_alive_int.value == 1:
       packet = headset.dequeue()
       if is_sync_frame_int is None or is_sync_frame_int.value:
-        state.process_frame(packet, True, chosen_val)
+        val = state.process_frame(packet, True, chosen_val)
         if is_sync_frame_int is not None:
           is_sync_frame_int.value = 0
       else:
-        state.process_frame(packet, False, chosen_val)
+        val = state.process_frame(packet, False, chosen_val)
+      if callback is not None:
+        callback(val)
   except KeyboardInterrupt:
     headset.close()
   finally:
