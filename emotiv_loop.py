@@ -11,7 +11,7 @@ sensor_names = ['F3', 'FC6', 'P7', 'T8', 'F7', 'F8', 'T7', 'P8', 'AF4',
                 'F4', 'AF3', 'O2', 'O1', 'FC5', 'X', 'Y']
 
 
-def main():
+def emotiv_loop(processor, extra_data, record_packets):
   headset = emotiv.Emotiv()
 
   gevent.spawn(headset.setup)
@@ -21,15 +21,23 @@ def main():
   try:
     while True:
       packet = headset.dequeue()
-      packets.append(packet)
+      if record_packets:
+        packets.append(packet)
+
+      if processor is not None:
+        processor.process_frame(packet, extra_data)
   except KeyboardInterrupt:
     headset.close()
   finally:
     headset.close()
-    fw = open('recording' + str(int(time.time())) + '.pickle', 'wb')
-    cPickle.dump(packets, fw)
-    fw.close()
+    if record_packets:
+      fw = open('recording' + str(int(time.time())) + '.pickle', 'wb')
+      cPickle.dump(packets, fw)
+      fw.close()
 
+
+def main():
+  emotiv_loop(None, None, True)
 
 if __name__ == "__main__":
   main()
