@@ -39,13 +39,10 @@ void main() {
 
 fragment_code = '''
 #version 300 es
-
 uniform uint vals;
 uniform uint chosen;
-
 in highp vec2 fragCoord;
 out highp vec3 color;
-
 void main(){
     uint mask = 0x00000001u;
     uint val = 0u;
@@ -53,13 +50,7 @@ void main(){
     else if (fragCoord.x < 0.0f) val = 1u;
     else if (fragCoord.x < 0.5f) val = 2u;
     else val = 3u;
-
-    if (fragCoord.y < -0.5f) val = val*4u + 0u;
-    else if (fragCoord.y < 0.0f) val = val*4u + 1u;
-    else if (fragCoord.y < 0.5f) val = val*4u + 2u;
-    else val = val*4u + 3u;
     mask = mask << val;
-
     if ((vals & mask) != 0u) {
         color = vec3(1.0f, 1.0f, 1.0f);
     } else {
@@ -188,9 +179,9 @@ def cvep_loop(is_sync_frame, alive, chosen_val, record):
 
 def loop(record=True):
   lights = []
-  for i in range(0, 16):
+  for i in range(0, 4):
     v = 1
-    for j in range(0, 4*i):
+    for j in range(0, 16*i):
       v = next_msequence63(v)
     lights.append(v)
 
@@ -216,7 +207,7 @@ def loop(record=True):
 
   emotiv_process.start()
 
-  fast_flash = True
+  fast_flash = False
   update_lights = True
 
   gl_state = vbo, program, valsId, chosenId, ibo
@@ -226,15 +217,17 @@ def loop(record=True):
     gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
     draw_frame(gl_state, pack_lights(lights), chosen_val.value)
-    if lights[0] == 1:
-      is_sync_frame.value = 1
-    else:
-      is_sync_frame.value = 0
-
     if not fast_flash:
       update_lights = not update_lights
+      is_sync_frame.value = 0
+
     if update_lights:
       lights = list(map(next_msequence63, lights))
+      if lights[0] == 1:
+        is_sync_frame.value = 1
+      else:
+        is_sync_frame.value = 0
+
     # print(lights)
     # Swap front and back buffers
     glfw.swap_buffers(window)

@@ -6,7 +6,6 @@ import processor
 from sklearn.cross_decomposition import CCA
 
 import numpy as np
-import sys
 # import math
 
 sensor_names = ['F3', 'FC6', 'P7', 'T8', 'F7', 'F8', 'T7', 'P8', 'AF4',
@@ -33,10 +32,9 @@ NUM_FLASHERS = 16
 NUM_CHANNELS = 16
 
 
-
-class CvepProcessor(object):
+class CvepProcessor(processor.PacketProcessor):
   def __init__(self):
-    self.state = State.TRAINING
+    self.state = TRAINING
     self.t_data = {s: np.zeros(0) for s in sensor_names}
     self.t_sync_frames = []
     self.p_data = np.zeros(shape=(len(sensor_names), 0))
@@ -58,7 +56,7 @@ class CvepProcessor(object):
 
   def process_training_data(self):
     last_start = [f for f in self.t_sync_frames if
-                  (f + State.SEQUENCE_SIZE) < self.seq_num][-1]
+                  (f + SEQUENCE_SIZE) < self.seq_num][-1]
     # last_end = sorted([f for f in self.t_sync_frames if f > last_start])[0]
     starts = [f for f in self.t_sync_frames if f <= last_start]
     ends = [sorted([f for f in self.t_sync_frames if f > start])[0]
@@ -67,15 +65,15 @@ class CvepProcessor(object):
     print "Frame pairs: ", frame_pairs
     # calculate CCA weights for it
     self.cca = CCA(n_components=1)
-    x_t = np.zeros((len(sensor_names), State.SEQUENCE_SIZE*len(frame_pairs)))
-    y_t = np.zeros((len(sensor_names), State.SEQUENCE_SIZE*len(frame_pairs)))
+    x_t = np.zeros((len(sensor_names), SEQUENCE_SIZE*len(frame_pairs)))
+    y_t = np.zeros((len(sensor_names), SEQUENCE_SIZE*len(frame_pairs)))
     # copy the data into an array for processing via CCA
     for idx, s in enumerate(sensor_names):
       for (f_idx, (st, ed)) in enumerate(frame_pairs):
-        s_idx, e_idx = f_idx*State.SEQUENCE_SIZE, (f_idx+1)*State.SEQUENCE_SIZE
+        s_idx, e_idx = f_idx*SEQUENCE_SIZE, (f_idx+1)*SEQUENCE_SIZE
         x_t[idx][s_idx:e_idx] = resize_and_shift(
-            self.t_data[s][st:ed], State.SEQUENCE_SIZE)
-      x_avg = x_t[idx].reshape((State.SEQUENCE_SIZE, -1)).mean(1)
+            self.t_data[s][st:ed], SEQUENCE_SIZE)
+      x_avg = x_t[idx].reshape((SEQUENCE_SIZE, -1)).mean(1)
       y_t[idx] = np.tile(x_avg, len(frame_pairs))
       x_mag = np.dot(x_t[idx], x_t[idx])
       y_mag = np.dot(y_t[idx], y_t[idx])
@@ -94,7 +92,7 @@ class CvepProcessor(object):
 
     cca_channel = self.cca.transform(x).flatten()
     self.cca_templ = cca_channel.reshape(
-        (State.SEQUENCE_SIZE, len(frame_pairs))).mean(axis=1)
+        (SEQUENCE_SIZE, len(frame_pairs))).mean(axis=1)
     cca_avg = np.tile(self.cca_templ, len(frame_pairs))
     cca_avg_mag = np.dot(cca_avg, cca_avg)
 
@@ -107,7 +105,7 @@ class CvepProcessor(object):
     raise TypeError("I don't know what I'm doing!")
     return cca_channel
 
-  def process_frame(self, data):
+  def process_training(self, data):
     packet, is_sync_frame = data
     if not is_sync_frame and not self.started:
       return
@@ -118,32 +116,31 @@ class CvepProcessor(object):
         self.t_data = {s: np.zeros(0) for s in sensor_names}
 
       self.t_sync_frames.append(self.seq_num)
-      if len(self.t_sync_frames) > State.N_STIM_CYCLES + 1:
-          self.state = State.PROCESSING
+      if len(self.t_sync_frames) > N_STIM_CYCLES + 1:
+          self.state = PROCESSING
           self.process_training_data()
     for s in sensor_names:
       if self.seq_num >= self.t_data[s].size:
         self.t_data[s] = np.append(
-            self.t_data[s], np.zeros(State.SEQUENCE_SIZE))
+            self.t_data[s], np.zeros(SEQUENCE_SIZE))
       self.t_data[s][self.seq_num] = packet.sensors[s]['value']
 
-  def read_mind(self, packet, is_sync_frame, chosen_val):
+  def read_mind(self, data):
       pass
 
-  def process_frame(self, packet, is_sync_frame):
+  def process_frame(self, data):
     self.seq_num = self.seq_num + 1
-    if self.state == State.TRAINING:
-      return self.process_training(packet, is_sync_frame)
-    elif self.state == State.PROCESSING:
-      return self.read_mind(packet, is_sync_frame, chosen_val)
+    if self.state == TRAINING:
+      return self.process_training(data)
+    elif self.state == PROCESSING:
+      return self.read_mind(data)
 
   def set_state(self, state):
-    if state == State.PROCESSING:
+    if state == PROCESSING:
       print "State changed to PROCESSING"
     else:
       print "State changed to TRAINING"
 
-  def get_record_data(self, packet, extra_data):
+  def strip_data(self, packet, extra_data):
     is_sync_frame = extra_data
-    return packet, is_sync_frame
-
+    return packet, is_sync_frame.value
