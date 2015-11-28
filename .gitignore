@@ -7,3 +7,4 @@ cpm-packages/
 blinky
 cmake_install.cmake
 Makefile
+__pycache__/
