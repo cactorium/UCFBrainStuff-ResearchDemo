@@ -16,7 +16,7 @@ import glfw
 import OpenGL.GL as gl
 import numpy as np
 
-from cvep_processor import CvepProcessor
+from ssvep_processor import SsvepProcessor
 from emotiv_loop import emotiv_loop
 
 FLOAT_SIZE = 4
@@ -24,28 +24,21 @@ UINT_SIZE = 4
 
 vertex_code = '''
 #version 300 es
-
 layout(location = 0) in vec3 vertexPosition_modelspace;
-
 out vec2 fragCoord;
-
 void main() {
     gl_Position.xyz = vertexPosition_modelspace;
     gl_Position.w = 1.0;
-
     fragCoord = gl_Position.xy;
 }
 '''
 
 fragment_code = '''
 #version 300 es
-
 uniform uint vals;
 uniform uint chosen;
-
 in highp vec2 fragCoord;
 out highp vec3 color;
-
 void main(){
     uint mask = 0x00000001u;
     uint val = 0u;
@@ -53,13 +46,7 @@ void main(){
     else if (fragCoord.x < 0.0f) val = 1u;
     else if (fragCoord.x < 0.5f) val = 2u;
     else val = 3u;
-
-    if (fragCoord.y < -0.5f) val = val*4u + 0u;
-    else if (fragCoord.y < 0.0f) val = val*4u + 1u;
-    else if (fragCoord.y < 0.5f) val = val*4u + 2u;
-    else val = val*4u + 3u;
     mask = mask << val;
-
     if ((vals & mask) != 0u) {
         color = vec3(1.0f, 1.0f, 1.0f);
     } else {
@@ -96,6 +83,18 @@ def next_msequence63(i):
     lsb2 = (i & (1 << 5)) >> 5
     return (i >> 1) | ((lsb ^ lsb2) << 5)
 
+frame_count = [4, 5, 6, 8]
+
+
+def next_ssvep(i):
+  idx = (i & 6) >> 1
+  count = i >> 3
+  count = (count + 1) % (2*frame_count[idx])
+  if count <= frame_count[idx]:
+    return count << 3 | idx << 1 | 1
+  else:
+    return count << 3 | idx << 1 | 0
+
 
 def draw_frame(gl_state, val, chosen):
   vbo, program, valsId, chosenId, ibo = gl_state
@@ -109,6 +108,18 @@ def draw_frame(gl_state, val, chosen):
   gl.glBindBuffer(gl.GL_ELEMENT_ARRAY_BUFFER, ibo)
   gl.glDrawElements(gl.GL_TRIANGLES, 6, gl.GL_UNSIGNED_INT, None)
   gl.glDisableVertexAttribArray(0)
+
+
+'''
+lights = []
+for i in range(0, 16):
+  v = 1
+  for j in range(0, 4*i):
+    v = next_msequence63(v)
+  lights.append(v)
+'''
+
+lights = [0x00, 0x02, 0x04, 0x06]
 
 
 def pack_lights(ls):
@@ -182,25 +193,18 @@ def init_buffers():
   return vao, vbo, ibo
 
 
-def cvep_loop(is_sync_frame, alive, chosen_val, record):
-  emotiv_loop(CvepProcessor(), (alive, chosen_val), is_sync_frame, record)
+def ssvep_loop(alive, chosen_val, record):
+  emotiv_loop(SsvepProcessor(), (alive, chosen_val), None, record)
 
 
-def loop(record=True):
-  lights = []
-  for i in range(0, 16):
-    v = 1
-    for j in range(0, 4*i):
-      v = next_msequence63(v)
-    lights.append(v)
-
+def loop(record):
+  lights = [0x00, 0x02, 0x04, 0x06]
   if not glfw.init():
     exit()
 
   window = init_window()
   program, vertex, fragment = init_shaders()
   vao, vbo, ibo = init_buffers()
-
   valsId = gl.glGetUniformLocation(program, "vals")
   chosenId = gl.glGetUniformLocation(program, "chosen")
 
@@ -211,8 +215,8 @@ def loop(record=True):
   chosen_val = multiprocessing.Value('i', -1)
   alive = multiprocessing.Value('i', 1)
   emotiv_process = multiprocessing.Process(
-      target=cvep_loop,
-      args=(is_sync_frame, alive, chosen_val, record))
+      target=ssvep_loop,
+      args=(is_sync_frame, alive, chosen_val))
 
   emotiv_process.start()
 
@@ -226,15 +230,13 @@ def loop(record=True):
     gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
     draw_frame(gl_state, pack_lights(lights), chosen_val.value)
-    if lights[0] == 1:
-      is_sync_frame.value = 1
-    else:
-      is_sync_frame.value = 0
+    is_sync_frame.value = 0
 
     if not fast_flash:
       update_lights = not update_lights
     if update_lights:
-      lights = list(map(next_msequence63, lights))
+      # lights = list(map(next_msequence63, lights))
+      lights = list(map(next_ssvep, lights))
     # print(lights)
     # Swap front and back buffers
     glfw.swap_buffers(window)
@@ -249,4 +251,4 @@ def loop(record=True):
   emotiv_process.join()
 
 if __name__ == '__main__':
-  loop()
+  loop(True)
