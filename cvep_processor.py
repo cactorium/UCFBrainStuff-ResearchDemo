@@ -32,6 +32,7 @@ NUM_FLASHERS = 16
 NUM_CHANNELS = 16
 
 
+# TODO: detect positive edge of sync_frame, to get actual sync_frame
 class CvepProcessor(processor.PacketProcessor):
   def __init__(self):
     self.state = TRAINING
@@ -53,6 +54,8 @@ class CvepProcessor(processor.PacketProcessor):
     self.cca = None
 
     self.cca_template = None
+    self.old_sync = False
+    self.real_sync = False
 
   def process_training_data(self):
     last_start = [f for f in self.t_sync_frames if
@@ -129,6 +132,12 @@ class CvepProcessor(processor.PacketProcessor):
       pass
 
   def process_frame(self, data):
+    _, is_sync_frame = data
+    self.real_sync = ((not self.old_sync) and is_sync_frame)
+    self.old_sync = is_sync_frame
+    if self.real_sync:
+      print("sync")
+
     self.seq_num = self.seq_num + 1
     if self.state == TRAINING:
       return self.process_training(data)

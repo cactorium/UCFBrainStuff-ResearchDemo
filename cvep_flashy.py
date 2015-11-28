@@ -219,7 +219,6 @@ def loop(record=True):
     draw_frame(gl_state, pack_lights(lights), chosen_val.value)
     if not fast_flash:
       update_lights = not update_lights
-      is_sync_frame.value = 0
 
     if update_lights:
       lights = list(map(next_msequence63, lights))
