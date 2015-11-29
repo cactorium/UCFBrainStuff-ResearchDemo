@@ -105,7 +105,7 @@ class CvepProcessor(processor.PacketProcessor):
         np.multiply(cca_channel_mag, cca_avg_mag)))
     print "cca channel self corr: ", cca_self_corr
     #  train OCSVM on dataset
-    raise TypeError("I don't know what I'm doing!")
+#     raise TypeError("I don't know what I'm doing!")
     return cca_channel
 
   def process_training(self, data):
