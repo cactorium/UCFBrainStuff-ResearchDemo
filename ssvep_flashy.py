@@ -83,7 +83,8 @@ def next_msequence63(i):
     lsb2 = (i & (1 << 5)) >> 5
     return (i >> 1) | ((lsb ^ lsb2) << 5)
 
-frame_count = [4, 5, 6, 8]
+#frame_count = [4, 5, 6, 8]
+frame_count = [2, 3, 5, 7]
 
 
 def next_ssvep(i):
@@ -194,6 +195,7 @@ def init_buffers():
 
 
 def ssvep_loop(alive, chosen_val, record):
+  print 'Foo!'
   emotiv_loop(SsvepProcessor(), (alive, chosen_val), None, record)
 
 
@@ -216,7 +218,7 @@ def loop(record):
   alive = multiprocessing.Value('i', 1)
   emotiv_process = multiprocessing.Process(
       target=ssvep_loop,
-      args=(is_sync_frame, alive, chosen_val))
+      args=(alive, chosen_val, record))
 
   emotiv_process.start()
 

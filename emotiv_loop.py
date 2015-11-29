@@ -34,6 +34,7 @@ def emotiv_loop(processor, loop_data, extra_data, record_packets):
   except KeyboardInterrupt:
     headset.close()
   finally:
+    print 'emotiv_loop: Exiting...'
     headset.close()
     if record_packets:
       fw = open('recording' + str(int(time.time())) + '.pickle', 'wb')

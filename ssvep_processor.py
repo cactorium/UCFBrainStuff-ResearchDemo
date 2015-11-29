@@ -31,7 +31,8 @@ def calculate_eeg_val(packet):
 
 
 def plot_fft(buf):
-  f, fft = spsig.welch(buf, fs=128.0, nfft=512)
+#  f, fft = spsig.welch(buf, fs=128.0, nfft=512)
+  f, fft = spsig.welch(buf, fs=128.0)
   print 'plot!'
   plt.clf()
   plt.plot(f, fft)
@@ -45,7 +46,7 @@ def plot_fft(buf):
 
 TRAINING = 0
 PROCESSING = 1
-WINDOW = 484
+WINDOW = 384
 NUM_CHANNELS = 16
 
 
