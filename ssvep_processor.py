@@ -14,13 +14,13 @@ sensor_names = ['F3', 'FC6', 'P7', 'T8', 'F7', 'F8', 'T7', 'P8', 'AF4',
 
 def calculate_eeg_val(packet):
   vld_vals = [packet.sensors[x]['value']
-              for x in sensor_names if packet.sensors[x]['quality'] > 5]
+              for x in sensor_names] # if packet.sensors[x]['quality'] > 5]
   ref_avg = 0
   if len(vld_vals) > 0:
       ref_avg = sum(vld_vals)/float(len(vld_vals))
   # average the two visual cortex electrodes
-  vld_data = [packet.sensors[x]['value'] for x in ['O1', 'O2'] if
-              packet.sensors[x]['quality'] > 5]
+  vld_data = [packet.sensors[x]['value'] for x in ['O1', 'O2']]# if
+             # packet.sensors[x]['quality'] > 5]
   avg_val = 0.0
   if len(vld_data) > 0:
     avg_val = sum(vld_data)/float(len(vld_data))
@@ -31,8 +31,8 @@ def calculate_eeg_val(packet):
 
 
 def plot_fft(buf):
-#  f, fft = spsig.welch(buf, fs=128.0, nfft=512)
-  f, fft = spsig.welch(buf, fs=128.0)
+  f, fft = spsig.welch(buf, fs=128.0, nfft=512)
+#  f, fft = spsig.welch(buf, fs=128.0)
   print 'plot!'
   plt.clf()
   plt.plot(f, fft)
