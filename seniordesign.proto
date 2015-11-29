@@ -1,4 +1,4 @@
-syntax = "proto3";
+syntax = "proto2";
 
 package seniordesign;
 
@@ -11,10 +11,10 @@ enum Direction {
 }
 
 message ProcessingResults {
-    Direction direction = 1;
-    double confidence = 2;
+    required Direction direction = 1;
+    required double confidence = 2;
 }
 
 message ProcessingAck {
-    uint64 timestamp = 1;
+    required uint64 timestamp = 1;
 }
