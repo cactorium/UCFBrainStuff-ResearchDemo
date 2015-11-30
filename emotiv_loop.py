@@ -12,14 +12,14 @@ sensor_names = ['F3', 'FC6', 'P7', 'T8', 'F7', 'F8', 'T7', 'P8', 'AF4',
                 'F4', 'AF3', 'O2', 'O1', 'FC5', 'X', 'Y']
 
 
-def emotiv_loop(processor, loop_data, extra_data, record_packets):
+def emotiv_loop(processor, loop_data, extra_data, record_packets, callback):
   headset = emotiv.Emotiv()
 
   gevent.spawn(headset.setup)
   gevent.sleep(0)
   # gevent.spawn(wait_for_user_input, state)
   packets = []
-  alive, chosen = loop_data
+  alive = loop_data
   try:
     while alive.value:
       packet = headset.dequeue()
@@ -29,8 +29,8 @@ def emotiv_loop(processor, loop_data, extra_data, record_packets):
 
       if processor is not None:
         result = processor.process_frame(data)
-        if result is not None:
-          chosen.value = int(result)
+        if result is not None and callback is not None:
+          callback(result)
   except KeyboardInterrupt:
     headset.close()
   finally:
