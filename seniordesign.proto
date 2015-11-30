@@ -3,11 +3,11 @@ syntax = "proto2";
 package seniordesign;
 
 enum Direction {
-    NEUTRAL     = 0;
-    FORWARD     = 1;
-    BACKWARD    = 2;
-    LEFT        = 3;
-    RIGHT       = 4;
+    SD_NEUTRAL     = 0;
+    SD_FORWARD     = 1;
+    SD_BACKWARD    = 2;
+    SD_LEFT        = 3;
+    SD_RIGHT       = 4;
 }
 
 message ProcessingResults {

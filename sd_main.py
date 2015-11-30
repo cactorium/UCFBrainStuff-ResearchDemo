@@ -11,17 +11,17 @@ def wrap_cmd(tp):
   ret = sd.ProcessingResults()
   ret.confidence = confidence
   if d == ssvep_processor.SD_BACKWARD:
-    ret.direction = sd.BACKWARD
+    ret.direction = sd.SD_BACKWARD
   elif d == ssvep_processor.SD_FORWARD:
-    ret.direction = sd.FORWARD
+    ret.direction = sd.SD_FORWARD
   elif d == ssvep_processor.SD_LEFT:
-    ret.direction = sd.LEFT
+    ret.direction = sd.SD_LEFT
   elif d == ssvep_processor.SD_RIGHT:
-    ret.direction = sd.RIGHT
+    ret.direction = sd.SD_RIGHT
   elif d == ssvep_processor.SD_NEUTRAL:
-    ret.direction = sd.NEUTRAL
+    ret.direction = sd.SD_NEUTRAL
   else:
-    ret.direction = sd.NEUTRAL
+    ret.direction = sd.SD_NEUTRAL
   return ret
 
 

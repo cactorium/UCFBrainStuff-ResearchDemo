@@ -19,7 +19,7 @@ _sym_db = _symbol_database.Default()
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='seniordesign.proto',
   package='seniordesign',
-  serialized_pb=_b('\n\x12seniordesign.proto\x12\x0cseniordesign\"S\n\x11ProcessingResults\x12*\n\tdirection\x18\x01 \x02(\x0e\x32\x17.seniordesign.Direction\x12\x12\n\nconfidence\x18\x02 \x02(\x01\"\"\n\rProcessingAck\x12\x11\n\ttimestamp\x18\x01 \x02(\x04*H\n\tDirection\x12\x0b\n\x07NEUTRAL\x10\x00\x12\x0b\n\x07\x46ORWARD\x10\x01\x12\x0c\n\x08\x42\x41\x43KWARD\x10\x02\x12\x08\n\x04LEFT\x10\x03\x12\t\n\x05RIGHT\x10\x04')
+  serialized_pb=_b('\n\x12seniordesign.proto\x12\x0cseniordesign\"S\n\x11ProcessingResults\x12*\n\tdirection\x18\x01 \x02(\x0e\x32\x17.seniordesign.Direction\x12\x12\n\nconfidence\x18\x02 \x02(\x01\"\"\n\rProcessingAck\x12\x11\n\ttimestamp\x18\x01 \x02(\x04*W\n\tDirection\x12\x0e\n\nSD_NEUTRAL\x10\x00\x12\x0e\n\nSD_FORWARD\x10\x01\x12\x0f\n\x0bSD_BACKWARD\x10\x02\x12\x0b\n\x07SD_LEFT\x10\x03\x12\x0c\n\x08SD_RIGHT\x10\x04')
 )
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -30,39 +30,39 @@ _DIRECTION = _descriptor.EnumDescriptor(
   file=DESCRIPTOR,
   values=[
     _descriptor.EnumValueDescriptor(
-      name='NEUTRAL', index=0, number=0,
+      name='SD_NEUTRAL', index=0, number=0,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='FORWARD', index=1, number=1,
+      name='SD_FORWARD', index=1, number=1,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='BACKWARD', index=2, number=2,
+      name='SD_BACKWARD', index=2, number=2,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='LEFT', index=3, number=3,
+      name='SD_LEFT', index=3, number=3,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='RIGHT', index=4, number=4,
+      name='SD_RIGHT', index=4, number=4,
       options=None,
       type=None),
   ],
   containing_type=None,
   options=None,
   serialized_start=157,
-  serialized_end=229,
+  serialized_end=244,
 )
 _sym_db.RegisterEnumDescriptor(_DIRECTION)
 
 Direction = enum_type_wrapper.EnumTypeWrapper(_DIRECTION)
-NEUTRAL = 0
-FORWARD = 1
-BACKWARD = 2
-LEFT = 3
-RIGHT = 4
+SD_NEUTRAL = 0
+SD_FORWARD = 1
+SD_BACKWARD = 2
+SD_LEFT = 3
+SD_RIGHT = 4
 
 
 
