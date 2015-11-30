@@ -18,7 +18,7 @@ SD_LEFT = 3
 SD_NEUTRAL = 4
 
 FFT_THRESHOLD = 15 #Because why not
-COMMAND_THRESHOLD = 4 #4 Consecutive wins and we're gonna send it
+COMMAND_THRESHOLD = 5 #4 Consecutive wins and we're gonna send it
 
 def calculate_eeg_val(packet):
   vld_vals = [packet.sensors[x]['value']
@@ -87,9 +87,9 @@ class SsvepProcessor(processor.PacketProcessor):
 
     #Calculate the Scores for Each Frequency
     scores[SD_FORWARD] = self.calculateScore(f, fft, self.bucketsFor8Hz  , 1.0)
-    scores[SD_BACKWARD] = self.calculateScore(f, fft, self.bucketsFor10Hz, 1.1)
-    scores[SD_LEFT] = self.calculateScore(f, fft, self.bucketsFor12Hz    , 1.2)
-    scores[SD_RIGHT] = self.calculateScore(f, fft, self.bucketsFor14Hz   , 1.3)
+    scores[SD_BACKWARD] = self.calculateScore(f, fft, self.bucketsFor10Hz, 1.05)
+    scores[SD_LEFT] = self.calculateScore(f, fft, self.bucketsFor12Hz    , 1.1)
+    scores[SD_RIGHT] = self.calculateScore(f, fft, self.bucketsFor14Hz   , 1.15)
 
     #Return the Best Score
     for i in scores:
@@ -158,7 +158,7 @@ class SsvepProcessor(processor.PacketProcessor):
       # remove DC offset
 
       fft_data = fft_data_raw - fft_data_raw.mean()
-      if self.idx % 64 == 0:
+      if self.idx % 32 == 0:
         plot_fft(fft_data)
         f, fft = spsig.welch(fft_data, fs=128.0, nfft=512)
         winner = self.calculatePeaks(f.tolist(), fft.tolist())
