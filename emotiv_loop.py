@@ -23,8 +23,8 @@ def emotiv_loop(processor, loop_data, extra_data, record_packets, callback):
   try:
     while alive.value:
       packet = headset.dequeue()
+      data = processor.strip_data(packet, extra_data)
       if record_packets:
-        data = processor.strip_data(packet, extra_data)
         packets.append(copy.deepcopy(data))
 
       if processor is not None:
