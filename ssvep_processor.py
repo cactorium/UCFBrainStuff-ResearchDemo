@@ -18,7 +18,8 @@ SD_LEFT = 3
 SD_NEUTRAL = 4
 
 FFT_THRESHOLD = 15 #Because why not
-COMMAND_THRESHOLD = 5 #4 Consecutive wins and we're gonna send it
+COMMAND_THRESHOLD = 5           #5 Consecutive wins and we're gonna send it
+NEUTRAL_COMMAND_THRESHOLD = 3   #Every 3 Neutral Wins counts as one regular win
 
 def calculate_eeg_val(packet):
   vld_vals = [packet.sensors[x]['value']
@@ -57,7 +58,6 @@ PROCESSING = 1
 WINDOW = 384
 NUM_CHANNELS = 16
 
-
 class SsvepProcessor(processor.PacketProcessor):
 
   def __init__(self):
@@ -66,10 +66,12 @@ class SsvepProcessor(processor.PacketProcessor):
     self.raw_buf = np.zeros((2*WINDOW))
     self.training_buf = np.zeros(0)
     self.idx = 0
+    self.neutralCommandCount = 0
     self.validCommandCount = 0
-    self.currWinner = SD_NEUTRAL
-    self.prevWinner = SD_NEUTRAL
-    self.commands = [SD_FORWARD, SD_BACKWARD, SD_RIGHT, SD_LEFT ]
+    self.currWinner = None
+    self.prevWinner = None
+    self.commands  = [SD_FORWARD, SD_BACKWARD, SD_RIGHT, SD_LEFT, SD_NEUTRAL ]
+    self.freqNames = ["8Hz (L)","10Hz (F)","12Hz (R)","14Hz (B)","NEUTRAL"]
     #self.bucketsFor8Hz = [ 7.75, 8, 8.25 ]
     #self.bucketsFor10Hz = [ 9.75, 10, 10.25 ]
     #self.bucketsFor12Hz = [ 11.75, 12, 12.25 ]
@@ -97,7 +99,7 @@ class SsvepProcessor(processor.PacketProcessor):
             scoresValid = True
 
     if (scoresValid):
-        print "Scores = ", scores
+        #print "Scores = ", scores
         return scores.index(max(scores))
     else:
         return SD_NEUTRAL
@@ -134,7 +136,7 @@ class SsvepProcessor(processor.PacketProcessor):
     return score
 
   def process_frame(self, data):
-    retVal = SD_NEUTRAL
+    retVal = None
     packet = data
     if self.state == TRAINING:
       self.training_buf = np.append(self.training_buf,
@@ -162,8 +164,20 @@ class SsvepProcessor(processor.PacketProcessor):
         plot_fft(fft_data)
         f, fft = spsig.welch(fft_data, fs=128.0, nfft=512)
         winner = self.calculatePeaks(f.tolist(), fft.tolist())
-        if (not winner == SD_NEUTRAL):
-            print "WINNER = ", winner
+
+        #Check if Neutral was the winner and adjust it to not output too much
+        if (winner == SD_NEUTRAL):
+            self.neutralCommandCount = self.neutralCommandCount + 1
+
+            if (self.neutralCommandCount >= NEUTRAL_COMMAND_THRESHOLD):
+                winner = SD_NEUTRAL
+                self.neutralCommandCount = 0
+            else:
+                winner = None
+
+
+        if (not winner == None):
+            print "WINNER = ", self.freqNames[winner]
             self.currWinner = winner
 
             if (self.prevWinner == self.currWinner):
@@ -172,12 +186,12 @@ class SsvepProcessor(processor.PacketProcessor):
                 self.validCommandCount = 0
 
             if (self.validCommandCount >= COMMAND_THRESHOLD):
-                print "SENDING COMMAND", [8,10,12,14][winner]
+                print "##### SENDING COMMAND #####", self.freqNames[winner]
                 retVal = winner
 
             self.prevWinner = self.currWinner
         else:
-            print "WINNER = NEUTRAL"
+            print "No Valid Peaks"
 
       self.idx = (self.idx + 1) % WINDOW
       return retVal
