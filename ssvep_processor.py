@@ -42,6 +42,15 @@ def plot_fft(buf):
   f, fft = spsig.welch(buf, fs=128.0, nfft=512)
 #  f, fft = spsig.welch(buf, fs=128.0)
   #print 'plot!'
+  '''
+  seconds = fft[0::2]
+  thirds = fft[0::3]
+  fourths = fft[0::4]
+  seconds = np.append(seconds, np.zeros(fft.size - seconds.size))
+  thirds = np.append(thirds, np.zeros(fft.size - thirds.size))
+  fourths = np.append(fourths, np.zeros(fft.size - fourths.size))
+  '''
+  # fft = fft + seconds/2 + thirds/4 + fourths/8
   plt.clf()
   plt.plot(f, fft)
   plt.xlim([4, 20])
