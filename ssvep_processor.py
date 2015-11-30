@@ -27,7 +27,7 @@ def calculate_eeg_val(packet):
   if len(vld_vals) > 0:
       ref_avg = sum(vld_vals)/float(len(vld_vals))
   # average the two visual cortex electrodes
-  vld_data = [packet.sensors[x]['value'] for x in ['O1', 'O2']]# if
+  vld_data = [packet.sensors[x]['value'] for x in ['AF3', 'AF4']]
              # packet.sensors[x]['quality'] > 5]
   avg_val = 0.0
   if len(vld_data) > 0:
