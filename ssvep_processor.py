@@ -2,7 +2,7 @@ import processor
 
 # braingerZone.py
 # Objective: imitate research paper
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 import numpy as np
 import scipy.signal as spsig
@@ -39,6 +39,7 @@ def calculate_eeg_val(packet):
 
 
 def plot_fft(buf):
+  return
   f, fft = spsig.welch(buf, fs=128.0, nfft=512)
 #  f, fft = spsig.welch(buf, fs=128.0)
   #print 'plot!'
@@ -78,8 +79,8 @@ class SsvepProcessor(processor.PacketProcessor):
     self.bucketsFor10Hz = [ 9.25, 9.5, 9.75, 10, 10.25, 10.5, 10.75 ]
     self.bucketsFor12Hz = [ 11.25, 11.5, 11.75, 12, 12.25, 12.5, 12.75 ]
     self.bucketsFor14Hz = [ 13.25, 13.5, 13.75, 14, 14.25, 14.5, 14.75 ]
-    plt.ion()
-    plt.show()
+    # plt.ion()
+    # plt.show()
 
   def calculatePeaks(self, f, fft):
     scores = [0,0,0,0]
