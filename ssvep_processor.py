@@ -206,6 +206,5 @@ class SsvepProcessor(processor.PacketProcessor):
     else:
       print "State changed to TRAINING"
 
-  def get_record_data(self, packet, extra_data):
-    is_sync_frame = extra_data
-    return packet, is_sync_frame
+  def strip_data(self, packet, extra_data):
+    return packet
