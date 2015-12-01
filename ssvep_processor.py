@@ -11,11 +11,11 @@ import scipy.signal as spsig
 sensor_names = ['F3', 'FC6', 'P7', 'T8', 'F7', 'F8', 'T7', 'P8', 'AF4',
                 'F4', 'AF3', 'O2', 'O1', 'FC5', 'X', 'Y']
 
-SD_FORWARD = 0
-SD_BACKWARD = 1
-SD_RIGHT = 2
-SD_LEFT = 3
-SD_NEUTRAL = 4
+SD_LEFT     = 0
+SD_FORWARD  = 1
+SD_RIGHT    = 2
+SD_BACKWARD = 3
+SD_NEUTRAL  = 4
 
 FFT_THRESHOLD = 15  # Because why not
 COMMAND_THRESHOLD = 5           # 5 Consecutive wins and we're gonna send it
@@ -75,7 +75,7 @@ class SsvepProcessor(processor.PacketProcessor):
     self.validCommandCount = 0
     self.currWinner = None
     self.prevWinner = None
-    self.commands = [SD_FORWARD, SD_BACKWARD, SD_RIGHT, SD_LEFT, SD_NEUTRAL]
+    self.commands = [SD_LEFT, SD_FORWARD, SD_RIGHT, SD_BACKWARD, SD_NEUTRAL]
     self.freqNames = ["8Hz (L)", "10Hz (F)", "12Hz (R)", "14Hz (B)", "NEUTRAL"]
     # self.bucketsFor8Hz = [ 7.75, 8, 8.25 ]
     # self.bucketsFor10Hz = [ 9.75, 10, 10.25 ]
@@ -93,10 +93,10 @@ class SsvepProcessor(processor.PacketProcessor):
     scoresValid = False
 
     # Calculate the Scores for Each Frequency
-    scores[SD_FORWARD] = self.calculateScore(f, fft, self.bucketsFor8Hz, 1.0)
-    scores[SD_BACKWARD] = self.calculateScore(f, fft, self.bucketsFor10Hz, 1.05)
-    scores[SD_LEFT] = self.calculateScore(f, fft, self.bucketsFor12Hz, 1.1)
-    scores[SD_RIGHT] = self.calculateScore(f, fft, self.bucketsFor14Hz, 1.15)
+    scores[SD_LEFT]     = self.calculateScore(f, fft, self.bucketsFor8Hz, 1.0)
+    scores[SD_FORWARD]  = self.calculateScore(f, fft, self.bucketsFor10Hz, 1.05)
+    scores[SD_RIGHT]    = self.calculateScore(f, fft, self.bucketsFor12Hz, 1.1)
+    scores[SD_BACKWARD] = self.calculateScore(f, fft, self.bucketsFor14Hz, 1.15)
 
     # Return the Best Score
     for i in scores:
