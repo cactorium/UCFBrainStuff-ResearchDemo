@@ -17,18 +17,20 @@ SD_RIGHT = 2
 SD_LEFT = 3
 SD_NEUTRAL = 4
 
-FFT_THRESHOLD = 15 #Because why not
-COMMAND_THRESHOLD = 5 #4 Consecutive wins and we're gonna send it
+FFT_THRESHOLD = 15  # Because why not
+COMMAND_THRESHOLD = 5           # 5 Consecutive wins and we're gonna send it
+NEUTRAL_COMMAND_THRESHOLD = 3   # Every 3 Neutral Wins counts as one regular win
+
 
 def calculate_eeg_val(packet):
   vld_vals = [packet.sensors[x]['value']
-              for x in sensor_names] # if packet.sensors[x]['quality'] > 5]
+              for x in sensor_names]  # if packet.sensors[x]['quality'] > 5]
   ref_avg = 0
   if len(vld_vals) > 0:
       ref_avg = sum(vld_vals)/float(len(vld_vals))
   # average the two visual cortex electrodes
-  vld_data = [packet.sensors[x]['value'] for x in ['O1', 'O2']]# if
-             # packet.sensors[x]['quality'] > 5]
+  vld_data = [packet.sensors[x]['value'] for x in ['AF3', 'AF4']]
+  # packet.sensors[x]['quality'] > 5]
   avg_val = 0.0
   if len(vld_data) > 0:
     avg_val = sum(vld_data)/float(len(vld_data))
@@ -42,7 +44,8 @@ def plot_fft(buf):
   return
   f, fft = spsig.welch(buf, fs=128.0, nfft=512)
 #  f, fft = spsig.welch(buf, fs=128.0)
-  #print 'plot!'
+  # print 'plot!'
+  '''
   plt.clf()
   plt.plot(f, fft)
   plt.xlim([4, 20])
@@ -52,6 +55,7 @@ def plot_fft(buf):
   plt.ylabel('PSD [V**2/Hz]')
   # plt.specgram(fft_data, NFFT=256, Fs=128, noverlap=128)
   plt.draw()
+  '''
 
 TRAINING = 0
 PROCESSING = 1
@@ -67,38 +71,40 @@ class SsvepProcessor(processor.PacketProcessor):
     self.raw_buf = np.zeros((2*WINDOW))
     self.training_buf = np.zeros(0)
     self.idx = 0
+    self.neutralCommandCount = 0
     self.validCommandCount = 0
-    self.currWinner = SD_NEUTRAL
-    self.prevWinner = SD_NEUTRAL
-    self.commands = [SD_FORWARD, SD_BACKWARD, SD_RIGHT, SD_LEFT ]
-    #self.bucketsFor8Hz = [ 7.75, 8, 8.25 ]
-    #self.bucketsFor10Hz = [ 9.75, 10, 10.25 ]
-    #self.bucketsFor12Hz = [ 11.75, 12, 12.25 ]
-    #self.bucketsFor14Hz = [ 13.75, 14, 14.25 ]
-    self.bucketsFor8Hz = [ 7.25, 7.5, 7.75, 8, 8.25, 8.5, 8.75 ]
-    self.bucketsFor10Hz = [ 9.25, 9.5, 9.75, 10, 10.25, 10.5, 10.75 ]
-    self.bucketsFor12Hz = [ 11.25, 11.5, 11.75, 12, 12.25, 12.5, 12.75 ]
-    self.bucketsFor14Hz = [ 13.25, 13.5, 13.75, 14, 14.25, 14.5, 14.75 ]
+    self.currWinner = None
+    self.prevWinner = None
+    self.commands = [SD_FORWARD, SD_BACKWARD, SD_RIGHT, SD_LEFT, SD_NEUTRAL]
+    self.freqNames = ["8Hz (L)", "10Hz (F)", "12Hz (R)", "14Hz (B)", "NEUTRAL"]
+    # self.bucketsFor8Hz = [ 7.75, 8, 8.25 ]
+    # self.bucketsFor10Hz = [ 9.75, 10, 10.25 ]
+    # self.bucketsFor12Hz = [ 11.75, 12, 12.25 ]
+    # self.bucketsFor14Hz = [ 13.75, 14, 14.25 ]
+    self.bucketsFor8Hz = [7.25, 7.5, 7.75, 8, 8.25, 8.5, 8.75]
+    self.bucketsFor10Hz = [9.25, 9.5, 9.75, 10, 10.25, 10.5, 10.75]
+    self.bucketsFor12Hz = [11.25, 11.5, 11.75, 12, 12.25, 12.5, 12.75]
+    self.bucketsFor14Hz = [13.25, 13.5, 13.75, 14, 14.25, 14.5, 14.75]
     # plt.ion()
     # plt.show()
 
   def calculatePeaks(self, f, fft):
-    scores = [0,0,0,0]
+    scores = [0, 0, 0, 0]
     scoresValid = False
 
-    #Calculate the Scores for Each Frequency
-    scores[SD_FORWARD] = self.calculateScore(f, fft, self.bucketsFor8Hz  , 1.0)
+    # Calculate the Scores for Each Frequency
+    scores[SD_FORWARD] = self.calculateScore(f, fft, self.bucketsFor8Hz, 1.0)
     scores[SD_BACKWARD] = self.calculateScore(f, fft, self.bucketsFor10Hz, 1.05)
-    scores[SD_LEFT] = self.calculateScore(f, fft, self.bucketsFor12Hz    , 1.1)
-    scores[SD_RIGHT] = self.calculateScore(f, fft, self.bucketsFor14Hz   , 1.15)
+    scores[SD_LEFT] = self.calculateScore(f, fft, self.bucketsFor12Hz, 1.1)
+    scores[SD_RIGHT] = self.calculateScore(f, fft, self.bucketsFor14Hz, 1.15)
 
-    #Return the Best Score
+    # Return the Best Score
     for i in scores:
         if (i > 0):
             scoresValid = True
 
     if (scoresValid):
-        print "Scores = ", scores
+        # print "Scores = ", scores
         return scores.index(max(scores))
     else:
         return SD_NEUTRAL
@@ -108,16 +114,16 @@ class SsvepProcessor(processor.PacketProcessor):
     tmpList = [0] * len(buckets)
     avgFftVal = 0
 
-    #Find FFT Values
+    # Find FFT Values
     for i in buckets:
         if (i in f):
             indx1 = buckets.index(i)
             indx2 = f.index(i)
             tmpList[indx1] = fft[indx2]
 
-    #Average the values in the bucket
+    # Average the values in the bucket
     for i in tmpList:
-        if ( i > (FFT_THRESHOLD / handicap)):
+        if i > (FFT_THRESHOLD / handicap):
             avgFftVal = avgFftVal + i
             valuesUsed = valuesUsed + 1
 
@@ -126,7 +132,7 @@ class SsvepProcessor(processor.PacketProcessor):
     else:
         avgFftVal = avgFftVal / valuesUsed
 
-    #Calculate Score
+    # Calculate Score
     if (avgFftVal > (FFT_THRESHOLD / handicap)):
         score = avgFftVal - (FFT_THRESHOLD / handicap)
     else:
@@ -135,7 +141,7 @@ class SsvepProcessor(processor.PacketProcessor):
     return score
 
   def process_frame(self, data):
-    retVal = SD_NEUTRAL
+    retVal = None
     packet = data
     if self.state == TRAINING:
       self.training_buf = np.append(self.training_buf,
@@ -163,8 +169,19 @@ class SsvepProcessor(processor.PacketProcessor):
         plot_fft(fft_data)
         f, fft = spsig.welch(fft_data, fs=128.0, nfft=512)
         winner = self.calculatePeaks(f.tolist(), fft.tolist())
-        if (not winner == SD_NEUTRAL):
-            print "WINNER = ", winner
+
+        # Check if Neutral was the winner and adjust it to not output too much
+        if winner == SD_NEUTRAL:
+            self.neutralCommandCount = self.neutralCommandCount + 1
+
+            if (self.neutralCommandCount >= NEUTRAL_COMMAND_THRESHOLD):
+                winner = SD_NEUTRAL
+                self.neutralCommandCount = 0
+            else:
+                winner = None
+
+        if winner is not None:
+            print "WINNER = ", self.freqNames[winner]
             self.currWinner = winner
 
             if (self.prevWinner == self.currWinner):
@@ -173,12 +190,12 @@ class SsvepProcessor(processor.PacketProcessor):
                 self.validCommandCount = 0
 
             if (self.validCommandCount >= COMMAND_THRESHOLD):
-                print "SENDING COMMAND", [8,10,12,14][winner]
+                print "##### SENDING COMMAND #####", self.freqNames[winner]
                 retVal = winner
 
             self.prevWinner = self.currWinner
         else:
-            print "WINNER = NEUTRAL"
+            print "No Valid Peaks"
 
       self.idx = (self.idx + 1) % WINDOW
       return retVal
